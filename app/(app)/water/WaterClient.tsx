@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useAppUser } from "@/lib/contexts/AppContext";
 import { triggerBadgeCheck } from "@/lib/utils/achievementsClient";
-import { Gear, Drop } from "@phosphor-icons/react";
+import { Gear, Drop, PencilSimple, Check, X, Plus, Minus } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell, ReferenceLine,
@@ -38,33 +38,37 @@ function WaterBottle({ pct }: { pct: number }) {
           <stop offset="0%" stopColor="#60B8FF" />
           <stop offset="100%" stopColor="#2196F3" />
         </linearGradient>
-        <clipPath id="bottleClip">
-          {/* Bottle shape path */}
-          <path d="M30 20 Q30 5 50 5 Q70 5 70 20 L78 45 Q88 55 88 70 L88 190 Q88 210 50 210 Q12 210 12 190 L12 70 Q12 55 22 45 Z" />
-        </clipPath>
+        <mask id="bottleMask">
+          {/* White area shows, black area hides */}
+          <rect x="0" y="0" width="100" height="220" fill="black" />
+          <path
+            d="M30 20 Q30 5 50 5 Q70 5 70 20 L78 45 Q88 55 88 70 L88 190 Q88 210 50 210 Q12 210 12 190 L12 70 Q12 55 22 45 Z"
+            fill="white"
+          />
+        </mask>
       </defs>
 
-      {/* Bottle outline */}
+      {/* Bottle background shape */}
       <path
         d="M30 20 Q30 5 50 5 Q70 5 70 20 L78 45 Q88 55 88 70 L88 190 Q88 210 50 210 Q12 210 12 190 L12 70 Q12 55 22 45 Z"
-        fill="var(--bg-base)" stroke="var(--border)" strokeWidth="2"
+        fill="var(--bg-base)"
       />
 
-      {/* Water fill — clips to bottle shape, animated height */}
+      {/* Water fill — clips to bottle shape via mask, animated height */}
       <motion.rect
         x="0" width="100"
         initial={{ y: 210, height: 0 }}
         animate={{ y: fillY * 2.1, height: clampedPct * 2.1 }}
         transition={{ type: "spring", duration: 1.0, bounce: 0.15 }}
         fill="url(#waterGrad)" opacity="0.85"
-        clipPath="url(#bottleClip)"
+        mask="url(#bottleMask)"
       />
 
       {/* Ripple wave overlay */}
       <motion.path
         d={`M12 ${fillY * 2.1 + 2} Q31 ${fillY * 2.1 - 4} 50 ${fillY * 2.1 + 2} Q69 ${fillY * 2.1 + 8} 88 ${fillY * 2.1 + 2}`}
         fill="none" stroke="#60B8FF" strokeWidth="2" opacity="0.5"
-        clipPath="url(#bottleClip)"
+        mask="url(#bottleMask)"
         animate={{ d: [
           `M12 ${fillY * 2.1 + 2} Q31 ${fillY * 2.1 - 4} 50 ${fillY * 2.1 + 2} Q69 ${fillY * 2.1 + 8} 88 ${fillY * 2.1 + 2}`,
           `M12 ${fillY * 2.1 + 4} Q31 ${fillY * 2.1 + 8} 50 ${fillY * 2.1 + 2} Q69 ${fillY * 2.1 - 2} 88 ${fillY * 2.1 + 4}`,
@@ -74,7 +78,13 @@ function WaterBottle({ pct }: { pct: number }) {
       />
 
       {/* Shine */}
-      <rect x="20" y="70" width="8" height="80" rx="4" fill="white" opacity="0.12" clipPath="url(#bottleClip)" />
+      <rect x="20" y="70" width="8" height="80" rx="4" fill="white" opacity="0.12" mask="url(#bottleMask)" />
+
+      {/* Bottle outline stroke drawn on top for clean edges */}
+      <path
+        d="M30 20 Q30 5 50 5 Q70 5 70 20 L78 45 Q88 55 88 70 L88 190 Q88 210 50 210 Q12 210 12 190 L12 70 Q12 55 22 45 Z"
+        fill="none" stroke="var(--border)" strokeWidth="2"
+      />
     </svg>
   );
 }
@@ -87,6 +97,9 @@ export function WaterTrackerClient({
   const [waterMl, setWaterMl] = useState(initialWaterMl);
   const [customAmt, setCustomAmt] = useState("");
   const [saving, setSaving] = useState(false);
+  const [logMode, setLogMode] = useState<"add" | "reduce">("add");
+  const [isEditing, setIsEditing] = useState(false);
+  const [editVal, setEditVal] = useState("");
 
   const pct = Math.min((waterMl / waterGoal) * 100, 100);
   const remaining = Math.max(waterGoal - waterMl, 0);
@@ -105,7 +118,7 @@ export function WaterTrackerClient({
   };
 
   const handleQuickAdd = async (amt: number) => {
-    const newMl = waterMl + amt;
+    const newMl = Math.max(0, waterMl + amt);
     setWaterMl(newMl);
     await saveWater(newMl);
   };
@@ -114,10 +127,19 @@ export function WaterTrackerClient({
     e.preventDefault();
     const amt = parseInt(customAmt, 10);
     if (!amt || amt <= 0) return;
-    const newMl = waterMl + amt;
+    const newMl = Math.max(0, waterMl + (logMode === "add" ? amt : -amt));
     setWaterMl(newMl);
     setCustomAmt("");
     await saveWater(newMl);
+  };
+
+  const handleDirectEditSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const amt = parseInt(editVal, 10);
+    if (isNaN(amt) || amt < 0) return;
+    setWaterMl(amt);
+    setIsEditing(false);
+    await saveWater(amt);
   };
 
   // Pull-to-refresh
@@ -175,15 +197,58 @@ export function WaterTrackerClient({
 
             {/* Overlay text */}
             <div className="mt-4 text-center">
-              <motion.p
-                key={waterMl}
-                initial={{ scale: 0.85, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="font-display text-5xl font-black text-[var(--text-primary)]"
-              >
-                {waterMl.toLocaleString()}
-                <span className="font-body text-base text-[var(--text-muted)] ml-1">ml</span>
-              </motion.p>
+              {isEditing ? (
+                <form onSubmit={handleDirectEditSave} className="flex items-center justify-center gap-1.5 mt-2">
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    value={editVal}
+                    onChange={(e) => setEditVal(e.target.value)}
+                    className="w-24 text-center font-display text-4xl font-black bg-[var(--bg-base)] border border-[var(--border)] rounded-xl py-0.5 px-2 focus:outline-none focus:border-[#60B8FF] text-[var(--text-primary)]"
+                    autoFocus
+                  />
+                  <button
+                    type="submit"
+                    className="p-2 rounded-xl bg-[#2196F3] text-white hover:bg-[#60B8FF] transition-colors"
+                    disabled={saving}
+                  >
+                    <Check size={16} weight="bold" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditing(false)}
+                    className="p-2 rounded-xl border border-[var(--border)] bg-[var(--bg-base)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                  >
+                    <X size={16} />
+                  </button>
+                </form>
+              ) : (
+                <div className="flex items-center justify-center gap-1.5 mt-4 group">
+                  <motion.p
+                    key={waterMl}
+                    initial={{ scale: 0.85, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="font-display text-5xl font-black text-[var(--text-primary)] cursor-pointer select-none"
+                    onClick={() => {
+                      setEditVal(waterMl.toString());
+                      setIsEditing(true);
+                    }}
+                  >
+                    {waterMl.toLocaleString()}
+                    <span className="font-body text-base text-[var(--text-muted)] ml-1">ml</span>
+                  </motion.p>
+                  <button
+                    onClick={() => {
+                      setEditVal(waterMl.toString());
+                      setIsEditing(true);
+                    }}
+                    className="p-1 rounded-lg border border-transparent text-[var(--text-muted)] opacity-0 group-hover:opacity-100 focus:opacity-100 hover:border-[var(--border)] hover:bg-[var(--bg-base)] hover:text-[var(--text-primary)] transition-all cursor-pointer"
+                    title="Edit logged water"
+                  >
+                    <PencilSimple size={14} />
+                  </button>
+                </div>
+              )}
               <p className="font-body text-xs text-[var(--text-muted)] mt-1">
                 of {waterGoal.toLocaleString()} ml
               </p>
@@ -221,30 +286,78 @@ export function WaterTrackerClient({
         </div>
       </Card>
 
-      {/* Quick add buttons */}
+      {/* Quick add/reduce buttons */}
       <Card variant="surface" className="p-4">
-        <p className="font-body-bold text-xs text-[var(--text-muted)] uppercase tracking-wider mb-3">
-          Quick Add
-        </p>
-        <div className="grid grid-cols-4 gap-2">
-          {QUICK_AMOUNTS.map((amt) => (
-            <button key={amt} onClick={() => handleQuickAdd(amt)} disabled={saving}
-              className="py-2.5 rounded-xl border border-[var(--border)] bg-[var(--bg-base)] text-xs font-body font-body-bold text-[var(--text-primary)] hover:border-[#60B8FF]/60 hover:bg-[rgba(33,150,243,0.06)] transition-all active:scale-95">
-              +{amt}ml
+        <div className="flex items-center justify-between mb-3">
+          <p className="font-body-bold text-xs text-[var(--text-muted)] uppercase tracking-wider">
+            Quick Log
+          </p>
+          <div className="flex items-center bg-[var(--bg-base)] border border-[var(--border)] rounded-lg p-0.5">
+            <button
+              type="button"
+              onClick={() => setLogMode("add")}
+              className={cn(
+                "px-2.5 py-1 text-[10px] font-body font-body-bold rounded-md transition-all flex items-center gap-1",
+                logMode === "add"
+                  ? "bg-[#2196F3] text-white"
+                  : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+              )}
+            >
+              <Plus size={10} weight="bold" /> Add
             </button>
-          ))}
+            <button
+              type="button"
+              onClick={() => setLogMode("reduce")}
+              className={cn(
+                "px-2.5 py-1 text-[10px] font-body font-body-bold rounded-md transition-all flex items-center gap-1",
+                logMode === "reduce"
+                  ? "bg-[var(--red)] text-white"
+                  : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+              )}
+            >
+              <Minus size={10} weight="bold" /> Reduce
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-4 gap-2">
+          {QUICK_AMOUNTS.map((amt) => {
+            const displayAmt = logMode === "add" ? `+${amt}` : `-${amt}`;
+            return (
+              <button
+                key={amt}
+                onClick={() => handleQuickAdd(logMode === "add" ? amt : -amt)}
+                disabled={saving}
+                className={cn(
+                  "py-2.5 rounded-xl border border-[var(--border)] bg-[var(--bg-base)] text-xs font-body font-body-bold text-[var(--text-primary)] transition-all active:scale-95",
+                  logMode === "add"
+                    ? "hover:border-[#60B8FF]/60 hover:bg-[rgba(33,150,243,0.06)]"
+                    : "hover:border-[var(--red)]/60 hover:bg-[rgba(239,68,68,0.06)]"
+                )}
+              >
+                {displayAmt}ml
+              </button>
+            );
+          })}
         </div>
 
         {/* Custom amount */}
         <form onSubmit={handleCustomAdd} className="mt-3 flex gap-2">
           <input
-            type="number" inputMode="numeric" placeholder="Custom ml"
+            type="number"
+            inputMode="numeric"
+            placeholder={logMode === "add" ? "Custom ml" : "Custom ml to reduce"}
             value={customAmt}
             onChange={(e) => setCustomAmt(e.target.value)}
             className="flex-1 font-body text-sm px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--bg-base)] text-[var(--text-primary)] focus:outline-none focus:border-[#60B8FF] transition-colors"
           />
-          <Button type="submit" size="sm" variant="primary" disabled={saving || !customAmt}>
-            Add
+          <Button
+            type="submit"
+            size="sm"
+            variant={logMode === "add" ? "primary" : "danger"}
+            disabled={saving || !customAmt}
+          >
+            {logMode === "add" ? "Add" : "Reduce"}
           </Button>
         </form>
       </Card>
