@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Bebas_Neue, Barlow_Condensed } from "next/font/google";
+import { Bebas_Neue, DM_Sans } from "next/font/google";
 import "./globals.css";
 
 // ── Fonts ──────────────────────────────────────────────────────────
@@ -7,14 +7,12 @@ const bebasNeue = Bebas_Neue({
   weight: "400",
   subsets: ["latin"],
   variable: "--font-display",
-  display: "swap",
 });
 
-const barlowCondensed = Barlow_Condensed({
-  weight: ["400", "500", "600", "700"],
+const dmSans = DM_Sans({
   subsets: ["latin"],
+  weight: ["400", "500"],
   variable: "--font-body",
-  display: "swap",
 });
 
 // ── Metadata ───────────────────────────────────────────────────────
@@ -58,7 +56,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${bebasNeue.variable} ${barlowCondensed.variable}`}
+      className={`${bebasNeue.variable} ${dmSans.variable}`}
       suppressHydrationWarning
     >
       <head>

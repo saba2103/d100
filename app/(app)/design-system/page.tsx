@@ -93,25 +93,25 @@ export default function DesignSystemPage() {
           <div className="space-y-4">
             <h3 className="label-lg text-[var(--text-muted)] uppercase tracking-wider mb-2">Body & Label Fonts</h3>
             <div>
-              <p className="text-[10px] text-[var(--text-muted)] mb-1">.label-lg (Barlow Condensed 600 18px)</p>
+              <p className="text-[10px] text-[var(--text-muted)] mb-1">.label-lg (DM Sans 500 18px)</p>
               <p className="label-lg text-[var(--text-primary)]">Settings and Account Profile Details</p>
             </div>
             <div>
-              <p className="text-[10px] text-[var(--text-muted)] mb-1">.label-md (Barlow Condensed 600 14px)</p>
+              <p className="text-[10px] text-[var(--text-muted)] mb-1">.label-md (DM Sans 500 14px)</p>
               <p className="label-md text-[var(--text-primary)]">DAILY NUTRITION INTAKE</p>
             </div>
             <div>
-              <p className="text-[10px] text-[var(--text-muted)] mb-1">.label-sm (Barlow Condensed 500 12px)</p>
+              <p className="text-[10px] text-[var(--text-muted)] mb-1">.label-sm (DM Sans 500 12px)</p>
               <p className="label-sm text-[var(--text-muted)]">ACTIVE WORKOUT TIME</p>
             </div>
             <div>
-              <p className="text-[10px] text-[var(--text-muted)] mb-1">.body-md (Barlow Condensed 500 15px)</p>
+              <p className="text-[10px] text-[var(--text-muted)] mb-1">.body-md (DM Sans 400 15px)</p>
               <p className="body-md text-[var(--text-secondary)]">
                 The quick brown fox jumps over the lazy dog.
               </p>
             </div>
             <div>
-              <p className="text-[10px] text-[var(--text-muted)] mb-1">.body-sm (Barlow Condensed 500 13px)</p>
+              <p className="text-[10px] text-[var(--text-muted)] mb-1">.body-sm (DM Sans 400 13px)</p>
               <p className="body-sm text-[var(--text-muted)]">
                 Subtext style for captions, hints, and error banners.
               </p>
