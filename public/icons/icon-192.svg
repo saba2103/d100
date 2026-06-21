@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF6B00"/>
+      <stop offset="100%" stop-color="#FFAA00"/>
+    </linearGradient>
+    <clipPath id="clip">
+      <rect width="192" height="192" rx="40"/>
+    </clipPath>
+  </defs>
+  <rect width="192" height="192" rx="40" fill="#09090B"/>
+  <rect width="192" height="192" rx="40" fill="url(#grad)" opacity="0.15"/>
+  <text
+    x="96"
+    y="130"
+    text-anchor="middle"
+    font-family="system-ui, -apple-system, sans-serif"
+    font-weight="900"
+    font-size="72"
+    letter-spacing="1"
+    fill="url(#grad)"
+  >D100</text>
+  <rect x="24" y="148" width="144" height="3" rx="1.5" fill="url(#grad)" opacity="0.6"/>
+</svg>
