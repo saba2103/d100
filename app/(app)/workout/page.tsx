@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { WorkoutHomeClient } from "./WorkoutHomeClient";
 import type { Metadata } from "next";
 
+import { getTodayStr } from "@/lib/utils/date";
+
 export const metadata: Metadata = {
   title: "Workout Tracker | D100",
   description: "Track your workouts, stay consistent, and view progress history.",
@@ -20,7 +22,7 @@ export default async function WorkoutPage() {
     redirect("/login");
   }
 
-  const todayStr = new Date().toISOString().split("T")[0];
+  const todayStr = getTodayStr();
 
   const { data: settingsData } = await supabase
     .from("user_settings")

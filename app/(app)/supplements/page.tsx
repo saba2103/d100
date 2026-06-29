@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { SupplementsClient } from "./SupplementsClient";
 import type { Metadata } from "next";
 
+import { getTodayStr } from "@/lib/utils/date";
+
 export const metadata: Metadata = {
   title: "Supplements | D100",
   description: "Track your daily supplements, compliance, and streaks.",
@@ -13,12 +15,13 @@ export default async function SupplementsPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const todayStr = new Date().toISOString().split("T")[0];
+  const todayStr = getTodayStr();
 
   // Fetch past 30 days of supplement logs for streak and grid calculations
-  const thirtyDaysAgo = new Date();
+  const [y, m, dVal] = todayStr.split("-").map(Number);
+  const thirtyDaysAgo = new Date(y, m - 1, dVal);
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split("T")[0];
+  const thirtyDaysAgoStr = thirtyDaysAgo.toLocaleDateString("sv-SE");
 
   const { data: settingsData } = await supabase
     .from("user_settings")

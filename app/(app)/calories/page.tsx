@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { CaloriesTrackerClient } from "./CaloriesClient";
 import type { Metadata } from "next";
 
+import { getTodayStr } from "@/lib/utils/date";
+
 export const metadata: Metadata = {
   title: "Calories | D100",
   description: "Track consumed, burned, and net calories daily.",
@@ -13,7 +15,7 @@ export default async function CaloriesPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = getTodayStr();
 
   const { data: settingsData } = await supabase
     .from("user_settings")

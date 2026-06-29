@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { ActiveWorkoutClient } from "./ActiveWorkoutClient";
 import type { Metadata } from "next";
 
+import { getTodayStr } from "@/lib/utils/date";
+
 export const metadata: Metadata = {
   title: "Track Session | D100",
   description: "Track exercises, weights, sets, and rest times in real-time.",
@@ -29,7 +31,7 @@ export default async function LogWorkoutPage({
     redirect("/login");
   }
 
-  const todayStr = new Date().toISOString().split("T")[0];
+  const todayStr = getTodayStr();
   const targetDate = searchParams.date || todayStr;
   const isEditing = searchParams.edit === "true";
 

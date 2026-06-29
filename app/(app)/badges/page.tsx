@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { BadgesClient } from "./BadgesClient";
 import { workoutStreak, nutritionStreak, waterStreak } from "@/lib/streaks";
 import { checkAndAwardBadges } from "@/lib/achievements";
+import { getTodayStr } from "@/lib/utils/date";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -48,8 +49,9 @@ export default async function BadgesPage() {
       .maybeSingle()
   ]);
 
-  const todayStr = new Date().toISOString().split("T")[0];
-  const today = new Date(todayStr);
+  const todayStr = getTodayStr();
+  const [y, m, dVal] = todayStr.split("-").map(Number);
+  const today = new Date(y, m - 1, dVal);
 
   let program_day = 1;
   let workout_days_missed = 0;

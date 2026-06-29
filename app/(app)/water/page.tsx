@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { WaterTrackerClient } from "./WaterClient";
 import type { Metadata } from "next";
 
+import { getTodayStr } from "@/lib/utils/date";
+
 export const metadata: Metadata = {
   title: "Water Tracker | D100",
   description: "Track your daily hydration and hit your water goal.",
@@ -13,13 +15,14 @@ export default async function WaterPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = getTodayStr();
 
   // Last 7 days dates
   const dates = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(today);
+    const [y, m, dVal] = today.split("-").map(Number);
+    const d = new Date(y, m - 1, dVal);
     d.setDate(d.getDate() - (6 - i));
-    return d.toISOString().split("T")[0];
+    return d.toLocaleDateString("sv-SE");
   });
 
   const { data: settingsData } = await supabase

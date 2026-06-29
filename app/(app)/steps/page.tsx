@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { StepsTrackerClient } from "./StepsClient";
 import type { Metadata } from "next";
 
+import { getTodayStr } from "@/lib/utils/date";
+
 export const metadata: Metadata = {
   title: "Steps Tracker | D100",
   description: "Log your daily steps and hit your movement goal.",
@@ -13,11 +15,12 @@ export default async function StepsPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = getTodayStr();
   const dates = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(today);
+    const [y, m, dVal] = today.split("-").map(Number);
+    const d = new Date(y, m - 1, dVal);
     d.setDate(d.getDate() - (6 - i));
-    return d.toISOString().split("T")[0];
+    return d.toLocaleDateString("sv-SE");
   });
 
   const { data: settingsData } = await supabase

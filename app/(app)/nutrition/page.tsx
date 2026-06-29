@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { NutritionClient } from "./NutritionClient";
 import type { Metadata } from "next";
 
+import { getTodayStr } from "@/lib/utils/date";
+
 export const metadata: Metadata = {
   title: "Nutrition | D100",
   description: "Track your daily meals, macros, and calorie goals.",
@@ -20,7 +22,7 @@ export default async function NutritionPage() {
     redirect("/login");
   }
 
-  const todayStr = new Date().toISOString().split("T")[0];
+  const todayStr = getTodayStr();
 
   const { data: settingsData } = await supabase
     .from("user_settings")

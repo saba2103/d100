@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import DashboardClient from "./DashboardClient";
 import { workoutStreak } from "@/lib/streaks";
 import { checkAndAwardBadges } from "@/lib/achievements";
+import { getTodayStr } from "@/lib/utils/date";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -44,7 +45,7 @@ export default async function DashboardPage() {
   // Sync / catch-up earned badges for active profile
   await checkAndAwardBadges(user.id, activeProfile);
 
-  const todayStr = new Date().toISOString().split("T")[0];
+  const todayStr = getTodayStr();
 
   // 3. Query initial data in parallel
   const [

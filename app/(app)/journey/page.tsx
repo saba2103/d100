@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { JourneyClient } from "./JourneyClient";
+import { getTodayStr } from "@/lib/utils/date";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -25,7 +26,7 @@ export default async function JourneyPage() {
   const profile = {
     ...profileRes.data,
     id: user.id,
-    program_start_date: memberProfileRes.data?.program_start_date || profileRes.data?.program_start_date || new Date().toISOString().split("T")[0],
+    program_start_date: memberProfileRes.data?.program_start_date || profileRes.data?.program_start_date || getTodayStr(),
     full_name: memberProfileRes.data?.full_name || profileRes.data?.full_name || (activeProfile === "S" ? "Saba" : "Ancy"),
   };
 
