@@ -52,9 +52,12 @@ export function CaloriesTrackerClient({
     setSaving(false);
   };
 
-  const formattedDate = new Date(today).toLocaleDateString("en-US", {
-    weekday: "short", month: "short", day: "numeric",
-  });
+  const formattedDate = (() => {
+    const [y, m, d] = today.split("-").map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString("en-US", {
+      weekday: "short", month: "short", day: "numeric",
+    });
+  })();
 
   return (
     <div className="pb-28 pt-4 px-4 max-w-lg mx-auto space-y-5">

@@ -103,10 +103,13 @@ function MetricTrendChart({
   const validData = measurementsAsc.filter((m) => m[metric.key] !== null && m[metric.key] !== undefined);
   if (validData.length === 0) return null;
 
-  const chartData = validData.map((m) => ({
-    date: new Date(m.measured_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-    val: m[metric.key] as number,
-  }));
+  const chartData = validData.map((m) => {
+    const [year, monthVal, d] = m.measured_at.split("-").map(Number);
+    return {
+      date: new Date(year, monthVal - 1, d).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+      val: m[metric.key] as number,
+    };
+  });
 
   const latestVal = validData[validData.length - 1][metric.key] as number;
   const oldestVal = validData[0][metric.key] as number;

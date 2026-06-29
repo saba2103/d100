@@ -187,7 +187,8 @@ export function WaterTrackerClient({
   // Build chart data
   const chartData = historyDates.map((d) => {
     const stat = historyStats[d];
-    const label = new Date(d).toLocaleDateString("en-US", { weekday: "short" }).slice(0, 2);
+    const [y, m, dayVal] = d.split("-").map(Number);
+    const label = new Date(y, m - 1, dayVal).toLocaleDateString("en-US", { weekday: "short" }).slice(0, 2);
     return {
       day: label,
       water: stat?.water_ml ?? (d === today ? waterMl : 0),
@@ -195,9 +196,12 @@ export function WaterTrackerClient({
     };
   });
 
-  const formattedDate = new Date(today).toLocaleDateString("en-US", {
-    weekday: "short", month: "short", day: "numeric",
-  });
+  const formattedDate = (() => {
+    const [y, m, d] = today.split("-").map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString("en-US", {
+      weekday: "short", month: "short", day: "numeric",
+    });
+  })();
 
   return (
     <div

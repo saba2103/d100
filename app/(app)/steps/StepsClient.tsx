@@ -103,16 +103,20 @@ export function StepsTrackerClient({
 
   const chartData = historyDates.map((d) => {
     const stat = historyStats[d];
+    const [y, m, dayVal] = d.split("-").map(Number);
     return {
-      day: new Date(d).toLocaleDateString("en-US", { weekday: "short" }).slice(0, 2),
+      day: new Date(y, m - 1, dayVal).toLocaleDateString("en-US", { weekday: "short" }).slice(0, 2),
       steps: stat?.steps ?? (d === today ? steps : 0),
       goal: stat?.steps_goal ?? stepsGoal,
     };
   });
 
-  const formattedDate = new Date(today).toLocaleDateString("en-US", {
-    weekday: "short", month: "short", day: "numeric",
-  });
+  const formattedDate = (() => {
+    const [y, m, d] = today.split("-").map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString("en-US", {
+      weekday: "short", month: "short", day: "numeric",
+    });
+  })();
 
   return (
     <div

@@ -122,9 +122,12 @@ export default async function MeasurementDetailPage({ params }: { params: { id: 
   if (error || !m) notFound();
 
   const flags = (m.flags as Record<string, string>) || {};
-  const formattedDate = new Date(m.measured_at).toLocaleDateString("en-US", {
-    weekday: "long", month: "long", day: "numeric", year: "numeric",
-  });
+  const formattedDate = (() => {
+    const [y, monthVal, d] = m.measured_at.split("-").map(Number);
+    return new Date(y, monthVal - 1, d).toLocaleDateString("en-US", {
+      weekday: "long", month: "long", day: "numeric", year: "numeric",
+    });
+  })();
 
   return (
     <div className="pb-28 pt-4 px-4 max-w-lg mx-auto space-y-5">

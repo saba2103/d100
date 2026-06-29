@@ -342,11 +342,14 @@ export default function DashboardClient({
               </span>
             </div>
             <p className="font-body text-xs sm:text-sm text-white/90">
-              {new Date(today).toLocaleDateString("en-US", {
-                weekday: "long",
-                month: "short",
-                day: "numeric",
-              })}
+              {(() => {
+                const [y, m, d] = today.split("-").map(Number);
+                return new Date(y, m - 1, d).toLocaleDateString("en-US", {
+                  weekday: "long",
+                  month: "short",
+                  day: "numeric",
+                });
+              })()}
             </p>
           </div>
 

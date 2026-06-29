@@ -127,9 +127,12 @@ export function BodyStatsClient({ userId, measurements }: Props) {
                 Latest Measurement
               </p>
               <p className="font-body-bold text-sm text-[var(--text-primary)] mt-0.5">
-                {new Date(latest.measured_at).toLocaleDateString("en-US", {
-                  weekday: "short", month: "long", day: "numeric", year: "numeric",
-                })}
+                {(() => {
+                  const [y, m, d] = latest.measured_at.split("-").map(Number);
+                  return new Date(y, m - 1, d).toLocaleDateString("en-US", {
+                    weekday: "short", month: "long", day: "numeric", year: "numeric",
+                  });
+                })()}
               </p>
             </div>
             <span className={cn(
@@ -200,9 +203,12 @@ export function BodyStatsClient({ userId, measurements }: Props) {
               >
                 <div className="space-y-0.5">
                   <p className="font-body-bold text-sm text-[var(--text-primary)]">
-                    {new Date(m.measured_at).toLocaleDateString("en-US", {
-                      weekday: "short", month: "short", day: "numeric",
-                    })}
+                    {(() => {
+                      const [y, monthVal, d] = m.measured_at.split("-").map(Number);
+                      return new Date(y, monthVal - 1, d).toLocaleDateString("en-US", {
+                        weekday: "short", month: "short", day: "numeric",
+                      });
+                    })()}
                   </p>
                   <div className="flex items-center gap-3 text-xs text-[var(--text-muted)] font-body">
                     {m.weight_kg && <span>{m.weight_kg} kg</span>}

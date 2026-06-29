@@ -310,9 +310,12 @@ export function SupplementsClient({ userId, today, initialLogs }: Props) {
     ];
   }, [checklist, logs]);
 
-  const formattedDate = new Date(today).toLocaleDateString("en-US", {
-    weekday: "short", month: "short", day: "numeric",
-  });
+  const formattedDate = (() => {
+    const [y, m, d] = today.split("-").map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString("en-US", {
+      weekday: "short", month: "short", day: "numeric",
+    });
+  })();
 
   return (
     <div className="pb-28 pt-4 px-4 max-w-lg mx-auto space-y-5">
@@ -513,7 +516,8 @@ export function SupplementsClient({ userId, today, initialLogs }: Props) {
               <tr>
                 <th className="py-1 pr-2 text-[9px] font-body-bold text-[var(--text-muted)] uppercase">Supplement</th>
                 {weekDays.map(d => {
-                  const label = new Date(d).toLocaleDateString("en-US", { weekday: "short" }).slice(0, 2);
+                  const [y, m, dayVal] = d.split("-").map(Number);
+                  const label = new Date(y, m - 1, dayVal).toLocaleDateString("en-US", { weekday: "short" }).slice(0, 2);
                   return (
                     <th key={d} className="py-1 px-1.5 text-center text-[9px] font-body-bold text-[var(--text-muted)] uppercase">
                       {label}
