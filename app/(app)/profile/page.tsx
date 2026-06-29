@@ -725,7 +725,8 @@ export default function ProfilePage() {
                 label="Program Start Date"
                 value={startDate}
                 onChange={handleDateChange}
-                hint="Initiation calendar offset date"
+                hint="Locked program start date (Day 1: 30 June 2026)"
+                disabled
               />
             </div>
 
