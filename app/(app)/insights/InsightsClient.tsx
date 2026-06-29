@@ -8,6 +8,7 @@ import {
 } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils/cn";
+import { getTodayStr } from "@/lib/utils/date";
 
 interface InsightItem {
   id: string;
@@ -378,8 +379,9 @@ export function InsightsClient({
             const isPastOrToday = day <= programDay;
             const hasInsight = !!allInsights[day];
 
-            const baseDate = programStartDate ? new Date(programStartDate) : new Date();
-            const tabDate = new Date(baseDate);
+            const baseDateStr = programStartDate || getTodayStr();
+            const [y, m, dVal] = baseDateStr.split("-").map(Number);
+            const tabDate = new Date(y, m - 1, dVal);
             tabDate.setDate(tabDate.getDate() + (day - 1));
             const dateLabel = tabDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 

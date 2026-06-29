@@ -53,7 +53,7 @@ export function WorkoutHomeClient({
         
         days.push({
           dayIndex: dayIdx + 1,
-          dateStr: currentDay.toISOString().split("T")[0],
+          dateStr: currentDay.toLocaleDateString("sv-SE"),
           dayName: currentDay.toLocaleDateString("en-US", { weekday: "short" }),
           dayNum: currentDay.getDate(),
         });
