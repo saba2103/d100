@@ -613,9 +613,12 @@ export function NutritionClient({ profile, settings, initialLogs, initialDailySt
     await triggerBadgeCheck();
   };
 
-  const formattedDate = new Date(selectedDate).toLocaleDateString("en-US", {
-    weekday: "short", month: "short", day: "numeric",
-  });
+  const formattedDate = (() => {
+    const [y, m, d] = selectedDate.split("-").map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString("en-US", {
+      weekday: "short", month: "short", day: "numeric",
+    });
+  })();
 
   const AddFoodContainer = isMobile ? BottomSheet : Modal;
 

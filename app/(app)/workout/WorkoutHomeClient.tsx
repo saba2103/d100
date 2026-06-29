@@ -223,7 +223,10 @@ export function WorkoutHomeClient({
       {/* Today's / Selected Day Plan Card */}
       <div className="space-y-3">
         <h2 className="font-display text-base tracking-wider text-[var(--text-muted)] uppercase">
-          {selectedDate === today ? "Today's Plan" : `Plan for ${new Date(selectedDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`}
+          {selectedDate === today ? "Today's Plan" : `Plan for ${(() => {
+            const [y, m, d] = selectedDate.split("-").map(Number);
+            return new Date(y, m - 1, d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+          })()}`}
         </h2>
 
         {selectedWorkoutLog ? (
