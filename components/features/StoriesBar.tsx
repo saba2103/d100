@@ -38,6 +38,7 @@ interface StoryGroup {
   title: string;
   avatarText: string;
   avatarBg: string;
+  avatarUrl?: string | null;
   locked: boolean;
   unlockedDayMin: number;
   slides: StorySlide[];
@@ -60,6 +61,9 @@ export function StoriesBar({ activeProfile, programDay, workoutStreak, profileNa
   // Map of dayNumber → signed photo URL (only days that have photos)
   const [photoByDay, setPhotoByDay] = useState<Record<number, { url: string; date: string }>>({});
 
+  const [sabaAvatar, setSabaAvatar] = useState<string | null>(null);
+  const [ancyAvatar, setAncyAvatar] = useState<string | null>(null);
+
   // Load viewed state from localStorage
   useEffect(() => {
     try {
@@ -74,6 +78,22 @@ export function StoriesBar({ activeProfile, programDay, workoutStreak, profileNa
     const supabase = createClient();
 
     (async () => {
+      // 1. Fetch member avatars
+      const { data: memberProfiles } = await supabase
+        .from("member_profiles")
+        .select("profile_tag, avatar_url")
+        .eq("user_id", userId);
+
+      if (memberProfiles) {
+        for (const mp of memberProfiles) {
+          if (mp.avatar_url) {
+            if (mp.profile_tag === "S") setSabaAvatar(mp.avatar_url);
+            if (mp.profile_tag === "A") setAncyAvatar(mp.avatar_url);
+          }
+        }
+      }
+
+      // 2. Fetch progress photos
       const { data } = await supabase
         .from("collection_items")
         .select("id, file_url, taken_at, created_at, album, profile_tag, title")
@@ -165,6 +185,7 @@ export function StoriesBar({ activeProfile, programDay, workoutStreak, profileNa
       title: "Your Progress",
       avatarText: activeProfile,
       avatarBg: "bg-gradient-to-tr from-[#FF6B00] to-[#FFAA00]",
+      avatarUrl: activeProfile === "S" ? sabaAvatar : ancyAvatar,
       locked: false,
       unlockedDayMin: 1,
       // Day 1–100 slides first, then streak recap
@@ -175,6 +196,7 @@ export function StoriesBar({ activeProfile, programDay, workoutStreak, profileNa
       title: "Partner Sync",
       avatarText: activeProfile === "S" ? "A" : "S",
       avatarBg: "bg-gradient-to-tr from-purple-600 to-pink-500",
+      avatarUrl: activeProfile === "S" ? ancyAvatar : sabaAvatar,
       locked: false,
       unlockedDayMin: 1,
       slides: [
@@ -549,9 +571,17 @@ export function StoriesBar({ activeProfile, programDay, workoutStreak, profileNa
                   )}
                 >
                   <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-[#09090b] p-0.5 flex items-center justify-center overflow-hidden relative">
-                    <div className={cn("w-full h-full rounded-full flex items-center justify-center font-display font-black text-sm text-white shadow-inner", group.avatarBg)}>
-                      {group.avatarText}
-                    </div>
+                    {group.avatarUrl ? (
+                      <img
+                        src={group.avatarUrl}
+                        alt={group.title}
+                        className="w-full h-full rounded-full object-cover shadow-inner"
+                      />
+                    ) : (
+                      <div className={cn("w-full h-full rounded-full flex items-center justify-center font-display font-black text-sm text-white shadow-inner", group.avatarBg)}>
+                        {group.avatarText}
+                      </div>
+                    )}
 
                     {group.locked && (
                       <div className="absolute inset-0 bg-black/70 flex items-center justify-center text-white backdrop-blur-[1px]">
@@ -630,9 +660,17 @@ export function StoriesBar({ activeProfile, programDay, workoutStreak, profileNa
                 {/* Author / Tag Header & Close Button */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
-                    <div className={cn("w-9 h-9 rounded-full flex items-center justify-center font-display font-black text-xs text-white shadow-md border border-white/20", activeGroup.avatarBg)}>
-                      {activeGroup.avatarText}
-                    </div>
+                    {activeGroup.avatarUrl ? (
+                      <img
+                        src={activeGroup.avatarUrl}
+                        alt={activeGroup.title}
+                        className="w-9 h-9 rounded-full object-cover shadow-md border border-white/20"
+                      />
+                    ) : (
+                      <div className={cn("w-9 h-9 rounded-full flex items-center justify-center font-display font-black text-xs text-white shadow-md border border-white/20", activeGroup.avatarBg)}>
+                        {activeGroup.avatarText}
+                      </div>
+                    )}
                     <div>
                       <h4 className="font-display text-sm font-black text-white leading-none">{activeGroup.title}</h4>
                       <p className="font-body text-[10px] text-white/70 mt-0.5">D100 Course Story</p>
