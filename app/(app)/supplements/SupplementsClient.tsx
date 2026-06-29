@@ -17,6 +17,8 @@ import { cn } from "@/lib/utils/cn";
 // Framer motion imports
 import { motion, AnimatePresence } from "framer-motion";
 
+import { useAppUser } from "@/lib/contexts/AppContext";
+
 interface Props {
   userId: string;
   today: string;
@@ -26,7 +28,7 @@ interface Props {
 interface Supplement {
   name: string;
   dose: string;
-  timing: string;
+  timing?: string;
   custom?: boolean;
   taken: boolean;
   taken_at?: string;
@@ -38,6 +40,7 @@ const COACH_SUPPLEMENTS: any[] = COACH_SUPPLEMENT_PLAN;
 
 export function SupplementsClient({ userId, today, initialLogs }: Props) {
   const router = useRouter();
+  const { activeProfile } = useAppUser();
   const [logs, setLogs] = useState(initialLogs);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
@@ -145,6 +148,17 @@ export function SupplementsClient({ userId, today, initialLogs }: Props) {
       if (!error && data) {
         setLogs(prev => [data, ...prev]);
       }
+    }
+
+    if (updated.length > 0 && updated.every((s) => s.taken)) {
+      fetch("/api/events/log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventType: "supplements_checked",
+          profileTag: activeProfile,
+        }),
+      }).catch(() => {});
     }
 
     await triggerBadgeCheck();

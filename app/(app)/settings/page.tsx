@@ -6,7 +6,6 @@ import { createClient } from "@/lib/supabase/client";
 import { useAppTheme } from "@/lib/contexts/AppContext";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { Input } from "@/components/ui/Input";
 import {
   Gear,
   Target,
@@ -16,8 +15,56 @@ import {
   CheckCircle,
   XCircle,
   SignOut,
+  LockKey,
+  Bell,
+  Check,
+  CircleNotch,
+  Clock,
+  Users,
+  ShieldCheck,
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils/cn";
+import { subscribeToPush, unsubscribeFromPush, checkPushSubscription, getDeviceLabel } from "@/lib/push";
+
+interface NotificationPreferences {
+  workout_time: string;
+  supplement_time: string;
+  water_times: string[];
+  night_log_time: string;
+  weekly_recap_time: string;
+  enable_streak_protection: boolean;
+  enable_streak_risk: boolean;
+  enable_milestone_celebrations: boolean;
+  enable_ai_nudges: boolean;
+  enable_partner_workout: boolean;
+  enable_partner_nutrition: boolean;
+  enable_partner_water: boolean;
+  enable_partner_supplements: boolean;
+  enable_partner_body_stats: boolean;
+  enable_partner_photos: boolean;
+  enable_partner_badges: boolean;
+  enable_partner_streaks: boolean;
+}
+
+const defaultNotifPrefs: NotificationPreferences = {
+  workout_time: "04:00",
+  supplement_time: "08:00",
+  water_times: ["10:00", "13:00", "16:00", "20:00"],
+  night_log_time: "21:00",
+  weekly_recap_time: "19:00",
+  enable_streak_protection: true,
+  enable_streak_risk: true,
+  enable_milestone_celebrations: true,
+  enable_ai_nudges: true,
+  enable_partner_workout: true,
+  enable_partner_nutrition: true,
+  enable_partner_water: true,
+  enable_partner_supplements: true,
+  enable_partner_body_stats: true,
+  enable_partner_photos: true,
+  enable_partner_badges: true,
+  enable_partner_streaks: true,
+};
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -27,16 +74,14 @@ export default function SettingsPage() {
   // Settings & Profile loading states
   const [loadingSettings, setLoadingSettings] = useState(true);
   const [savingGoals, setSavingGoals] = useState(false);
-  const [savingKey, setSavingKey] = useState(false);
-  const [testingConnection, setTestingConnection] = useState(false);
   const [savingAccount, setSavingAccount] = useState(false);
+  const [savingNotifs, setSavingNotifs] = useState(false);
 
-  // States: AI Config
-  const [provider, setProvider] = useState<"openai" | "anthropic">("openai");
-  const [apiKey, setApiKey] = useState("");
-  const [keyExists, setKeyExists] = useState(false);
-  const [keyLast4, setKeyLast4] = useState("");
-  const [testResult, setTestResult] = useState<"success" | "fail" | null>(null);
+  // States: Push Notifications & Preferences
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushLoading, setPushLoading] = useState(false);
+  const [deviceLabel, setDeviceLabel] = useState("");
+  const [notifPrefs, setNotifPrefs] = useState<NotificationPreferences>(defaultNotifPrefs);
 
   // States: Goals
   const [waterGoal, setWaterGoal] = useState(3000);
@@ -58,17 +103,22 @@ export default function SettingsPage() {
           return;
         }
         setUserId(user.id);
+        setDeviceLabel(getDeviceLabel());
+
+        // Check if push notifications are enabled on this device
+        const isSubscribed = await checkPushSubscription();
+        setPushEnabled(isSubscribed);
 
         // Fetch sanitized settings from server API
         const settingsRes = await fetch("/api/settings/get");
         if (settingsRes.ok) {
           const settings = await settingsRes.json();
-          setProvider(settings.ai_provider || "openai");
-          setKeyExists(settings.keyExists);
-          setKeyLast4(settings.keyLast4);
           setWaterGoal(settings.water_goal_ml || 3000);
           setStepsGoal(settings.steps_goal || 10000);
           setCaloriesGoal(settings.calories_goal || 2000);
+          if (settings.notification_preferences) {
+            setNotifPrefs({ ...defaultNotifPrefs, ...settings.notification_preferences });
+          }
         }
 
         // Fetch Profile details
@@ -92,61 +142,43 @@ export default function SettingsPage() {
     loadData();
   }, [router, supabase]);
 
-  // Actions: AI Config Save
-  const handleSaveKey = async () => {
-    setSavingKey(true);
-    setTestResult(null);
+  const handleTogglePush = async () => {
+    if (!userId) return;
+    setPushLoading(true);
     try {
-      const res = await fetch("/api/settings/save", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ provider, apiKey }),
-      });
-
-      if (res.ok) {
-        if (apiKey.trim() !== "") {
-          setKeyExists(true);
-          setKeyLast4(apiKey.trim().slice(-4));
-        } else {
-          setKeyExists(false);
-          setKeyLast4("");
-        }
-        setApiKey("");
-        alert("AI configuration saved successfully!");
+      if (pushEnabled) {
+        const ok = await unsubscribeFromPush(userId);
+        if (ok) setPushEnabled(false);
       } else {
-        const err = await res.json();
-        alert("Failed to save: " + (err.error || "Unknown error"));
+        const ok = await subscribeToPush(userId);
+        if (ok) setPushEnabled(true);
       }
     } catch (err) {
-      console.error(err);
-      alert("Failed to save AI configuration.");
+      console.error("Failed to toggle push notifications:", err);
     } finally {
-      setSavingKey(false);
+      setPushLoading(false);
     }
   };
 
-  // Actions: Test connection
-  const handleTestConnection = async () => {
-    setTestingConnection(true);
-    setTestResult(null);
+  const handleSaveNotifPrefs = async () => {
+    if (!userId) return;
+    setSavingNotifs(true);
     try {
-      const res = await fetch("/api/settings/test-connection", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ provider, apiKey }),
-      });
+      const { error } = await supabase
+        .from("user_settings" as any)
+        .update({
+          notification_preferences: notifPrefs,
+          updated_at: new Date().toISOString(),
+        } as any)
+        .eq("user_id", userId);
 
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setTestResult("success");
-      } else {
-        setTestResult("fail");
-      }
-    } catch (err) {
+      if (error) throw error;
+      alert("Notification preferences saved successfully!");
+    } catch (err: any) {
       console.error(err);
-      setTestResult("fail");
+      alert("Failed to save preferences: " + (err.message || err));
     } finally {
-      setTestingConnection(false);
+      setSavingNotifs(false);
     }
   };
 
@@ -190,7 +222,6 @@ export default function SettingsPage() {
 
       if (error) throw error;
       
-      // Also update active_profile in user_settings if display name changes
       if (displayName.trim() === "S" || displayName.trim() === "A") {
         await supabase
           .from("user_settings")
@@ -238,115 +269,63 @@ export default function SettingsPage() {
 
       {/* Grid Sections */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* 1. AI Configuration */}
-        <Card variant="surface" className="p-6 space-y-4 flex flex-col justify-between">
+        {/* 1. Notifications & Device Setup */}
+        <Card variant="surface" className="p-6 space-y-4 flex flex-col justify-between border-[#27272a]">
           <div className="space-y-4">
-            <div className="flex items-center gap-2 border-b border-[var(--border)] pb-3">
-              <Robot size={22} className="text-[var(--accent-text)]" />
+            <div className="flex items-center gap-2 border-b border-[#27272a] pb-3">
+              <Bell size={22} className="text-[var(--accent-text)]" />
               <h2 className="font-display text-lg tracking-wider text-[var(--text-primary)] uppercase">
-                AI Configuration
+                Device Push Status
               </h2>
             </div>
 
-            {/* Provider Switcher */}
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-body-bold text-[var(--text-muted)] uppercase tracking-wider block">
-                AI Service Provider
-              </label>
-              <div className="flex bg-[var(--bg-base)] border border-[var(--border)] rounded-xl p-1 w-max">
-                {(["openai", "anthropic"] as const).map((prov) => (
-                  <button
-                    key={prov}
-                    onClick={() => {
-                      setProvider(prov);
-                      setTestResult(null);
-                    }}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3.5 rounded-2xl bg-[#09090b] border border-[#27272a]">
+                <div>
+                  <p className="font-body text-xs font-bold text-[var(--text-primary)]">PWA Push Notifications</p>
+                  <p className="font-body text-[10px] text-[var(--text-muted)] mt-0.5">
+                    {pushEnabled ? "Enabled ✓" : "Receive instant alerts on badge unlocks & reminders"}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleTogglePush}
+                  disabled={pushLoading}
+                  className={cn(
+                    "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
+                    pushEnabled ? "bg-[var(--accent-start)]" : "bg-[#27272a]"
+                  )}
+                >
+                  <span
                     className={cn(
-                      "px-4 py-2 rounded-lg text-xs font-display uppercase tracking-wider transition-colors",
-                      provider === prov
-                        ? "bg-[var(--accent-start)] text-white font-bold"
-                        : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                      "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out flex items-center justify-center text-[10px] font-bold text-black",
+                      pushEnabled ? "translate-x-5" : "translate-x-0"
                     )}
                   >
-                    {prov === "openai" ? "OpenAI" : "Anthropic"}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* API Key Input */}
-            <div className="space-y-1.5">
-              <div className="flex justify-between items-center">
-                <label className="text-[10px] font-body-bold text-[var(--text-muted)] uppercase tracking-wider">
-                  API Key
-                </label>
-                {keyExists && (
-                  <span className="text-[9px] font-body text-[var(--green)] font-bold">
-                    Key Saved (ends in {keyLast4})
+                    {pushLoading ? <CircleNotch size={10} className="animate-spin text-black" /> : pushEnabled ? <Check size={12} weight="bold" /> : null}
                   </span>
-                )}
+                </button>
               </div>
-              <input
-                type="password"
-                placeholder={keyExists ? "••••••••••••••••••••••••" : "Enter API Key"}
-                value={apiKey}
-                onChange={(e) => {
-                  setApiKey(e.target.value);
-                  setTestResult(null);
-                }}
-                className="w-full bg-[var(--bg-base)] border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-start)]/50 font-body"
-              />
+
+              {pushEnabled && (
+                <div className="p-3 rounded-xl bg-[var(--green-soft)] border border-[#27272a] text-[11px] font-body text-[var(--green)] flex items-center gap-2">
+                  <CheckCircle size={16} weight="fill" className="shrink-0" />
+                  <span>Active on this device: <strong>{deviceLabel}</strong></span>
+                </div>
+              )}
+
+              <p className="text-[10px] font-body text-[var(--text-muted)] leading-relaxed italic border-t border-[#27272a]/60 pt-2">
+                * Note: Push notifications require app installed to Home Screen on iOS 16.4+. Android Chrome &amp; desktop browsers work directly.
+              </p>
             </div>
-
-            {/* Test Results Banner */}
-            {testResult && (
-              <div
-                className={cn(
-                  "flex items-center gap-2 p-2.5 rounded-xl text-xs font-body border",
-                  testResult === "success"
-                    ? "bg-[var(--green)]/5 border-[var(--green)]/20 text-[var(--green)]"
-                    : "bg-[var(--red)]/5 border-[var(--red)]/20 text-[var(--red)]"
-                )}
-              >
-                {testResult === "success" ? (
-                  <>
-                    <CheckCircle size={16} weight="fill" />
-                    <span>Connection successful! Key is valid.</span>
-                  </>
-                ) : (
-                  <>
-                    <XCircle size={16} weight="fill" />
-                    <span>Connection failed. Please check provider settings or key.</span>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
-
-          <div className="flex gap-3 pt-4 border-t border-[var(--border)]/40 mt-4">
-            <Button
-              className="flex-1 text-[10px] font-display uppercase tracking-widest font-black py-2.5"
-              variant="secondary"
-              disabled={testingConnection}
-              onClick={handleTestConnection}
-            >
-              {testingConnection ? "Testing..." : "Test Connection"}
-            </Button>
-            <Button
-              className="flex-1 text-[10px] font-display uppercase tracking-widest font-black py-2.5"
-              variant="primary"
-              disabled={savingKey}
-              onClick={handleSaveKey}
-            >
-              {savingKey ? "Saving..." : "Save Key"}
-            </Button>
           </div>
         </Card>
 
-        {/* 2. Goals Configuration */}
-        <Card variant="surface" className="p-6 space-y-4 flex flex-col justify-between">
+        {/* 2. Daily Goals Configuration */}
+        <Card variant="surface" className="p-6 space-y-4 flex flex-col justify-between border-[#27272a]">
           <div className="space-y-4">
-            <div className="flex items-center gap-2 border-b border-[var(--border)] pb-3">
+            <div className="flex items-center gap-2 border-b border-[#27272a] pb-3">
               <Target size={22} className="text-[var(--accent-text)]" />
               <h2 className="font-display text-lg tracking-wider text-[var(--text-primary)] uppercase">
                 Daily Goals
@@ -362,7 +341,7 @@ export default function SettingsPage() {
                 type="number"
                 value={waterGoal}
                 onChange={(e) => setWaterGoal(Number(e.target.value))}
-                className="w-full bg-[var(--bg-base)] border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-start)]/50 font-body"
+                className="w-full bg-[var(--bg-base)] border border-[#27272a] rounded-xl px-3.5 py-2.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-start)]/50 font-body"
               />
             </div>
 
@@ -375,7 +354,7 @@ export default function SettingsPage() {
                 type="number"
                 value={stepsGoal}
                 onChange={(e) => setStepsGoal(Number(e.target.value))}
-                className="w-full bg-[var(--bg-base)] border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-start)]/50 font-body"
+                className="w-full bg-[var(--bg-base)] border border-[#27272a] rounded-xl px-3.5 py-2.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-start)]/50 font-body"
               />
             </div>
 
@@ -388,12 +367,12 @@ export default function SettingsPage() {
                 type="number"
                 value={caloriesGoal}
                 onChange={(e) => setCaloriesGoal(Number(e.target.value))}
-                className="w-full bg-[var(--bg-base)] border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-start)]/50 font-body"
+                className="w-full bg-[var(--bg-base)] border border-[#27272a] rounded-xl px-3.5 py-2.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-start)]/50 font-body"
               />
             </div>
           </div>
 
-          <div className="pt-4 border-t border-[var(--border)]/40 mt-4">
+          <div className="pt-4 border-t border-[#27272a]/40 mt-4">
             <Button
               fullWidth
               variant="primary"
@@ -405,14 +384,227 @@ export default function SettingsPage() {
             </Button>
           </div>
         </Card>
+      </div>
 
-        {/* 3. Appearance */}
-        <Card variant="surface" className="p-6 space-y-4 flex flex-col justify-between">
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          DETAILED NOTIFICATION PREFERENCES (Time-based & Rules)
+          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <Card variant="surface" className="p-6 space-y-6 border-[#27272a]">
+        <div className="flex items-center justify-between border-b border-[#27272a] pb-4">
+          <div className="flex items-center gap-2.5">
+            <Bell size={24} className="text-[var(--accent-text)]" />
+            <div>
+              <h2 className="font-display text-xl tracking-wider text-[var(--text-primary)] uppercase">
+                NOTIFICATION PREFERENCES
+              </h2>
+              <p className="font-body text-xs text-[var(--text-muted)] mt-0.5">
+                Customize alert times, automated rules, and partner activity sync
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Column 1: Time-Based Reminders */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2 border-b border-[var(--border)] pb-3">
-              <PaintBrush size={22} className="text-[var(--accent-text)]" />
+            <div className="flex items-center gap-2 border-b border-[#27272a]/60 pb-2">
+              <Clock size={18} className="text-[var(--accent-text)]" />
+              <h3 className="font-display text-sm font-black text-[var(--text-primary)] uppercase tracking-wider">
+                Daily Reminder Times
+              </h3>
+            </div>
+
+            <div className="space-y-3">
+              {/* Workout Time */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-body-bold text-[var(--text-muted)] uppercase tracking-wider block">
+                  Workout Reminder (AM)
+                </label>
+                <input
+                  type="time"
+                  value={notifPrefs.workout_time}
+                  onChange={(e) => setNotifPrefs({ ...notifPrefs, workout_time: e.target.value })}
+                  className="w-full bg-[#09090b] border border-[#27272a] rounded-xl px-3 py-2 text-xs text-[var(--text-primary)] font-body"
+                />
+              </div>
+
+              {/* Supplement Time */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-body-bold text-[var(--text-muted)] uppercase tracking-wider block">
+                  Morning Supplement Time
+                </label>
+                <input
+                  type="time"
+                  value={notifPrefs.supplement_time}
+                  onChange={(e) => setNotifPrefs({ ...notifPrefs, supplement_time: e.target.value })}
+                  className="w-full bg-[#09090b] border border-[#27272a] rounded-xl px-3 py-2 text-xs text-[var(--text-primary)] font-body"
+                />
+              </div>
+
+              {/* Water Times (4 slots) */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-body-bold text-[var(--text-muted)] uppercase tracking-wider block">
+                  Water Check-ins (4 Slots)
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {notifPrefs.water_times.map((t, idx) => (
+                    <input
+                      key={idx}
+                      type="time"
+                      value={t}
+                      onChange={(e) => {
+                        const newTimes = [...notifPrefs.water_times];
+                        newTimes[idx] = e.target.value;
+                        setNotifPrefs({ ...notifPrefs, water_times: newTimes });
+                      }}
+                      className="w-full bg-[#09090b] border border-[#27272a] rounded-xl px-2.5 py-1.5 text-xs text-[var(--text-primary)] font-body"
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Night Log Time */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-body-bold text-[var(--text-muted)] uppercase tracking-wider block">
+                  Nightly Log Reminder
+                </label>
+                <input
+                  type="time"
+                  value={notifPrefs.night_log_time}
+                  onChange={(e) => setNotifPrefs({ ...notifPrefs, night_log_time: e.target.value })}
+                  className="w-full bg-[#09090b] border border-[#27272a] rounded-xl px-3 py-2 text-xs text-[var(--text-primary)] font-body"
+                />
+              </div>
+
+              {/* Sunday Recap */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-body-bold text-[var(--text-muted)] uppercase tracking-wider block">
+                  Sunday Weekly Recap
+                </label>
+                <input
+                  type="time"
+                  value={notifPrefs.weekly_recap_time}
+                  onChange={(e) => setNotifPrefs({ ...notifPrefs, weekly_recap_time: e.target.value })}
+                  className="w-full bg-[#09090b] border border-[#27272a] rounded-xl px-3 py-2 text-xs text-[var(--text-primary)] font-body"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Column 2: Event Rules & Streaks */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 border-b border-[#27272a]/60 pb-2">
+              <ShieldCheck size={18} className="text-emerald-400" />
+              <h3 className="font-display text-sm font-black text-[var(--text-primary)] uppercase tracking-wider">
+                Automated Event Rules
+              </h3>
+            </div>
+
+            <div className="space-y-2.5">
+              {[
+                { key: "enable_streak_protection", label: "Streak Protection (8 PM)", desc: "Alerts if no workout logged by 8 PM" },
+                { key: "enable_streak_risk", label: "Streak Risk Warning", desc: "Alerts if inactive for 23+ hours" },
+                { key: "enable_milestone_celebrations", label: "Milestone Celebrations", desc: "Instant alerts on badge unlock & phase completion" },
+                { key: "enable_ai_nudges", label: "Smart AI Coach Nudges", desc: "Recovery advice after 3 missed workouts" },
+              ].map(({ key, label, desc }) => (
+                <label key={key} className="flex items-start gap-3 p-3 rounded-xl bg-[#09090b] border border-[#27272a] cursor-pointer hover:border-[#FF6B00]/40 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={(notifPrefs as any)[key]}
+                    onChange={(e) => setNotifPrefs({ ...notifPrefs, [key]: e.target.checked })}
+                    className="mt-0.5 rounded border-[#27272a] text-[var(--accent-start)] focus:ring-0 w-4 h-4 shrink-0"
+                  />
+                  <div className="min-w-0">
+                    <p className="font-body text-xs font-bold text-[var(--text-primary)]">{label}</p>
+                    <p className="font-body text-[10px] text-[var(--text-muted)] mt-0.5 leading-tight">{desc}</p>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Column 3: Partner Sync (Saba <-> Ancy) */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 border-b border-[#27272a]/60 pb-2">
+              <Users size={18} className="text-purple-400" />
+              <h3 className="font-display text-sm font-black text-[var(--text-primary)] uppercase tracking-wider">
+                Partner Sync Alerts
+              </h3>
+            </div>
+
+            <div className="space-y-2.5 max-h-[340px] overflow-y-auto pr-1 custom-scrollbar">
+              {[
+                { key: "enable_partner_workout", label: "Partner Workout Crushed" },
+                { key: "enable_partner_nutrition", label: "Partner Meals Logged" },
+                { key: "enable_partner_water", label: "Partner Water Goal Hit" },
+                { key: "enable_partner_supplements", label: "Partner Supplements Taken" },
+                { key: "enable_partner_body_stats", label: "Partner Weight/Stats Logged" },
+                { key: "enable_partner_photos", label: "Partner Progress Photo Added" },
+                { key: "enable_partner_badges", label: "Partner Badge Unlocked" },
+                { key: "enable_partner_streaks", label: "Partner Streak Milestone" },
+              ].map(({ key, label }) => (
+                <label key={key} className="flex items-center justify-between p-2.5 rounded-xl bg-[#09090b] border border-[#27272a] cursor-pointer hover:border-purple-500/40 transition-colors">
+                  <span className="font-body text-xs text-[var(--text-primary)] font-medium">{label}</span>
+                  <input
+                    type="checkbox"
+                    checked={(notifPrefs as any)[key]}
+                    onChange={(e) => setNotifPrefs({ ...notifPrefs, [key]: e.target.checked })}
+                    className="rounded border-[#27272a] text-purple-500 focus:ring-0 w-4 h-4 shrink-0"
+                  />
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="pt-4 border-t border-[#27272a]/60 flex justify-end">
+          <Button
+            variant="primary"
+            disabled={savingNotifs}
+            onClick={handleSaveNotifPrefs}
+            className="text-xs font-display uppercase tracking-widest font-black py-2.5 px-6"
+          >
+            {savingNotifs ? "Saving Preferences..." : "Save Notification Preferences"}
+          </Button>
+        </div>
+      </Card>
+
+      {/* Grid Sections 3 & 4 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* 3. AI Configuration (Locked) */}
+        <Card variant="surface" className="p-6 space-y-4 flex flex-col justify-between relative overflow-hidden border-[#27272a]">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between border-b border-[#27272a] pb-3">
+              <div className="flex items-center gap-2">
+                <Robot size={22} className="text-[var(--accent-text)]" />
+                <h2 className="font-display text-lg tracking-wider text-[var(--text-primary)] uppercase">
+                  AI Configuration
+                </h2>
+              </div>
+              <span className="flex items-center gap-1 text-[10px] font-body-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[var(--accent-start)]/10 text-[var(--accent-text)] border border-[#27272a]">
+                <LockKey size={12} weight="fill" /> System Managed
+              </span>
+            </div>
+
+            <div className="p-3 rounded-xl bg-[var(--bg-base)] border border-[#27272a] space-y-2">
+              <div className="flex items-center gap-2 text-xs font-display uppercase tracking-wider text-[var(--text-primary)] font-bold">
+                <LockKey size={16} className="text-[var(--accent-text)]" />
+                <span>Anthropic Claude AI Active</span>
+              </div>
+              <p className="text-[11px] font-body text-[var(--text-muted)] leading-relaxed">
+                The Claude Sonnet AI integration is active system-wide for meal plate analysis, scale scanning, and coach insights.
+              </p>
+            </div>
+          </div>
+        </Card>
+
+        {/* 4. Appearance & Account */}
+        <Card variant="surface" className="p-6 space-y-4 flex flex-col justify-between border-[#27272a]">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 border-b border-[#27272a] pb-3">
+              <User size={22} className="text-[var(--accent-text)]" />
               <h2 className="font-display text-lg tracking-wider text-[var(--text-primary)] uppercase">
-                Appearance
+                Account &amp; Theme
               </h2>
             </div>
 
@@ -421,7 +613,7 @@ export default function SettingsPage() {
               <label className="text-[10px] font-body-bold text-[var(--text-muted)] uppercase tracking-wider block">
                 Application Theme
               </label>
-              <div className="grid grid-cols-3 gap-2 bg-[var(--bg-base)] border border-[var(--border)] p-1 rounded-xl w-full">
+              <div className="grid grid-cols-3 gap-2 bg-[var(--bg-base)] border border-[#27272a] p-1 rounded-xl w-full">
                 {([
                   { label: "Dark", val: "dark" },
                   { label: "Light", val: "light" },
@@ -442,23 +634,11 @@ export default function SettingsPage() {
                 ))}
               </div>
             </div>
-          </div>
-        </Card>
 
-        {/* 4. Account Settings */}
-        <Card variant="surface" className="p-6 space-y-4 flex flex-col justify-between">
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 border-b border-[var(--border)] pb-3">
-              <User size={22} className="text-[var(--accent-text)]" />
-              <h2 className="font-display text-lg tracking-wider text-[var(--text-primary)] uppercase">
-                Account Settings
-              </h2>
-            </div>
-
-            {/* Display Name / Profile switch */}
+            {/* Display Name */}
             <div className="space-y-1.5">
               <label className="text-[10px] font-body-bold text-[var(--text-muted)] uppercase tracking-wider block">
-                Profile display tag (S / A)
+                Profile Tag (S / A)
               </label>
               <input
                 type="text"
@@ -466,29 +646,12 @@ export default function SettingsPage() {
                 maxLength={2}
                 onChange={(e) => setDisplayName(e.target.value.toUpperCase())}
                 placeholder="e.g. S"
-                className="w-full bg-[var(--bg-base)] border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-start)]/50 font-body"
+                className="w-full bg-[var(--bg-base)] border border-[#27272a] rounded-xl px-3.5 py-2.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-start)]/50 font-body"
               />
-            </div>
-
-            {/* Start Date (Read only) */}
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-body-bold text-[var(--text-muted)] uppercase tracking-wider block">
-                Program Start Date
-              </label>
-              <div className="w-full bg-[var(--bg-elevated)] border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-xs text-[var(--text-muted)] font-body">
-                {startDate ? new Date(startDate).toLocaleDateString("en-US", {
-                  month: "long",
-                  day: "numeric",
-                  year: "numeric",
-                }) : "Not Set"}
-              </div>
-              <span className="text-[9px] font-body text-[var(--text-muted)] italic">
-                * Contact support to modify your program starting date.
-              </span>
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 pt-4 border-t border-[var(--border)]/40 mt-4">
+          <div className="flex flex-col gap-3 pt-4 border-t border-[#27272a]/40 mt-4">
             <Button
               fullWidth
               variant="secondary"

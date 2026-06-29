@@ -32,6 +32,7 @@ import { Modal, BottomSheet, SectionHeader } from "@/components/ui/Misc";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { AIInsightCard } from "@/components/features/AIInsightCard";
+import { StoriesBar } from "@/components/features/StoriesBar";
 
 interface DashboardClientProps {
   profile: any;
@@ -106,8 +107,19 @@ export default function DashboardClient({
   }
 
   let phaseNumber = 1;
-  if (dayNumber > 7) {
+  let phaseTitle = "Foundation Week";
+  if (dayNumber > 91) {
+    phaseNumber = 5;
+    phaseTitle = "Peak Week";
+  } else if (dayNumber > 63) {
+    phaseNumber = 4;
+    phaseTitle = "Shredding Phase";
+  } else if (dayNumber > 35) {
+    phaseNumber = 3;
+    phaseTitle = "Muscle Building Mode";
+  } else if (dayNumber > 7) {
     phaseNumber = 2;
+    phaseTitle = "Building the Base";
   }
 
   // Phase-specific data
@@ -304,12 +316,22 @@ export default function DashboardClient({
         )}
       </AnimatePresence>
 
+      {/* 0. STORIES BUBBLES BAR */}
+      <StoriesBar
+        activeProfile={activeProfileTag}
+        programDay={dayNumber}
+        workoutStreak={workoutStreak}
+        profileName={profile?.full_name || "Athlete"}
+        userId={profile?.id || ""}
+        programStartDate={profile?.program_start_date || null}
+      />
+
       {/* 1. HERO CARD */}
       <HeroCard className="relative overflow-hidden">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="space-y-1 select-none">
             <span className="font-body font-body-bold text-[10px] sm:text-xs uppercase tracking-widest text-white/80">
-              PHASE {phaseNumber} · DAY {dayNumber}
+              PHASE {phaseNumber} — {phaseTitle} · DAY {dayNumber}
             </span>
             <div className="flex items-baseline gap-2">
               <h1 className="font-display text-7xl sm:text-8xl leading-none text-white font-black">
@@ -646,7 +668,7 @@ export default function DashboardClient({
             profileId={activeProfileTag}
             initialInsight={latestInsightForProfile?.insight || null}
             initialGeneratedAt={latestInsightForProfile?.created_at || null}
-            hasApiKey={!!settings?.ai_api_key_encrypted}
+            hasApiKey={true}
           />
 
         </div>

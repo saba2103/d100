@@ -23,6 +23,7 @@ import {
   ArrowsLeftRight,
   ShieldWarning,
   CircleNotch,
+  GearSix,
 } from "@phosphor-icons/react";
 
 // Local helper to format dates in local timezone as YYYY-MM-DD
@@ -187,15 +188,21 @@ export default function ProfilePage() {
         dayNumber = Math.max(1, Math.min(100, diffDays));
       }
 
-      if (dayNumber > 70) {
-        phaseNumber = 3;
+      if (dayNumber > 91) {
+        phaseNumber = 5;
         daysRemaining = 100 - dayNumber;
+      } else if (dayNumber > 63) {
+        phaseNumber = 4;
+        daysRemaining = 91 - dayNumber;
       } else if (dayNumber > 35) {
+        phaseNumber = 3;
+        daysRemaining = 63 - dayNumber;
+      } else if (dayNumber > 7) {
         phaseNumber = 2;
-        daysRemaining = 70 - dayNumber;
+        daysRemaining = 35 - dayNumber;
       } else {
         phaseNumber = 1;
-        daysRemaining = 35 - dayNumber;
+        daysRemaining = 7 - dayNumber;
       }
 
       // 2. Fetch Workouts completed in current phase
@@ -609,6 +616,15 @@ export default function ProfilePage() {
                   <ArrowsLeftRight size={16} />
                 )}
                 Switch to {otherProfileName}
+              </Button>
+
+              <Button
+                variant="secondary"
+                onClick={() => router.push("/settings")}
+                className="w-full flex items-center justify-center gap-2 text-xs font-display font-black py-2.5 uppercase tracking-wider"
+              >
+                <GearSix size={16} />
+                App Settings
               </Button>
 
               <Button

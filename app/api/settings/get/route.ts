@@ -29,12 +29,10 @@ export async function GET() {
       return NextResponse.json({ error: "Settings not found" }, { status: 404 });
     }
 
-    // Decrypt key to get last 4 characters
     const decryptedKey = decryptSafe(settings.ai_api_key_encrypted);
     const keyExists = !!decryptedKey;
     const keyLast4 = decryptedKey ? decryptedKey.slice(-4) : "";
 
-    // Return sanitized settings
     return NextResponse.json({
       theme: settings.theme,
       ai_provider: settings.ai_provider,
@@ -42,6 +40,7 @@ export async function GET() {
       steps_goal: settings.steps_goal,
       calories_goal: settings.calories_goal,
       active_profile: settings.active_profile,
+      notification_preferences: (settings as any).notification_preferences,
       keyExists,
       keyLast4,
     });

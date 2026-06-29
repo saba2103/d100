@@ -194,6 +194,15 @@ export default function UploadPage() {
       setUploadProgress(100);
       setSuccess(true);
 
+      fetch("/api/events/log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventType: "progress_photo_added",
+          profileTag: profileTagValue || "S",
+        }),
+      }).catch(() => {});
+
       // Redirect back to gallery after short success visual
       setTimeout(() => {
         router.push("/collection");

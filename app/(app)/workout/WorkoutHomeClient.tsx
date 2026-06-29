@@ -165,10 +165,10 @@ export function WorkoutHomeClient({
               variant="surface"
               id={`week-card-${week.weekNum}`}
               className={cn(
-                "p-3 w-[290px] sm:w-[360px] shrink-0 snap-center border transition-all duration-200",
+                "p-3 w-[290px] sm:w-[360px] shrink-0 snap-center rounded-2xl border transition-all duration-200",
                 hasActiveDate
-                  ? "border-[var(--accent-start)]/50 bg-gradient-to-br from-[var(--bg-surface)] to-[rgba(249,115,22,0.02)] shadow-sm"
-                  : "border-[var(--border)] hover:border-[var(--border)-hover]"
+                  ? "border-[#3f3f46] bg-gradient-to-br from-[var(--bg-surface)] to-[rgba(249,115,22,0.02)] shadow-sm"
+                  : "border-[#27272a] hover:border-[#3f3f46]"
               )}
             >
               <div className="flex justify-between items-center mb-2 px-1">
@@ -193,9 +193,9 @@ export function WorkoutHomeClient({
                       className={cn(
                         "flex flex-col items-center py-2.5 rounded-xl transition-all relative border",
                         isSelected
-                          ? "bg-gradient-to-br from-[var(--accent-start)]/10 to-[var(--accent-end)]/10 border-[var(--accent-start)] text-[var(--accent-text)]"
+                          ? "bg-gradient-to-br from-[var(--accent-start)]/10 to-[var(--accent-end)]/10 border-[var(--accent-start)] text-[var(--accent-text)] font-bold"
                           : "border-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-base)]",
-                        isCurrentToday && !isSelected && "border-[var(--border)]"
+                        isCurrentToday && !isSelected && "border-[#27272a]"
                       )}
                     >
                       <span className="text-[8px] uppercase font-body font-body-bold tracking-wider opacity-85">
@@ -228,7 +228,7 @@ export function WorkoutHomeClient({
 
         {selectedWorkoutLog ? (
           /* WORKOUT LOGGED STATE */
-          <Card variant="surface" className="p-6 border-l-4 border-[var(--green)]">
+          <Card variant="surface" className="p-6 border-l-4 border-[var(--green)] border-[#27272a]">
             <div className="flex justify-between items-start">
               <div>
                 <div className="flex items-center gap-2">
@@ -267,7 +267,7 @@ export function WorkoutHomeClient({
           </Card>
         ) : (
           /* NO WORKOUT LOGGED STATE */
-          <Card variant="surface" className="p-6">
+          <Card variant="surface" className="p-6 border-[#27272a]">
             {selectedDayNum >= 1 && selectedDayNum <= 6 && PHASE1_EXERCISES.length > 0 ? (
               /* ACTIVE TRAINING PLAN (MON/WED/FRI or PHASE 1 WORKOUT DAYS) */
               <div className="space-y-4">
@@ -296,54 +296,112 @@ export function WorkoutHomeClient({
                 </div>
 
                 {/* Warm-Up Card */}
-                <div className="p-4 rounded-xl bg-[rgba(249,115,22,0.03)] border-l-4 border-l-[var(--accent-start)] border-[var(--border)] space-y-2">
-                  <h4 className="font-display text-xs font-black text-[var(--accent-text)] uppercase tracking-wider">
-                    🔥 Warm-Up Protocol
-                  </h4>
-                  <ol className="list-decimal pl-4 font-body text-[11px] text-[var(--text-secondary)] space-y-1">
-                    <li>3 min light cardio (treadmill/cross trainer)</li>
-                    <li>Arm circles — 15 each direction</li>
-                    <li>Band pull-aparts — 15 reps</li>
-                    <li>Push-ups — 10–15 reps (slow, controlled)</li>
-                    <li>Light lateral raises — 15 reps</li>
-                    <li>1 warm-up set of first exercise at 50% weight</li>
-                  </ol>
+                <div className="p-5 rounded-2xl bg-[#18181b] border border-[#27272a] space-y-4 shadow-sm">
+                  <div className="flex items-center justify-between border-b border-[#27272a] pb-3">
+                    <h4 className="font-display text-sm font-black text-[var(--accent-text)] uppercase tracking-wider flex items-center gap-2">
+                      <span>🔥</span> WARM-UP PROTOCOL
+                    </h4>
+                    <span className="text-[10px] font-body-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[var(--accent-start)]/10 text-[var(--accent-text)]">
+                      ~6 Mins • 6 Steps
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                    {[
+                      { num: "01", text: "3 min light cardio", detail: "Treadmill / Cross Trainer" },
+                      { num: "02", text: "Arm circles", detail: "15 each direction" },
+                      { num: "03", text: "Band pull-aparts", detail: "15 reps" },
+                      { num: "04", text: "Push-ups", detail: "10–15 reps (slow & controlled)" },
+                      { num: "05", text: "Light lateral raises", detail: "15 reps" },
+                      { num: "06", text: "First exercise warm-up set", detail: "1 set at 50% working weight" },
+                    ].map((step) => (
+                      <div key={step.num} className="flex items-center gap-3 p-3 rounded-xl bg-[#09090b] border border-[#27272a] hover:border-[#3f3f46] transition-colors">
+                        <span className="w-7 h-7 rounded-lg bg-[var(--accent-start)]/10 text-[var(--accent-text)] flex items-center justify-center font-display text-xs font-black shrink-0">
+                          {step.num}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-body text-xs font-bold text-[var(--text-primary)] leading-tight">{step.text}</p>
+                          <p className="font-body text-[10px] text-[var(--text-muted)] mt-0.5">{step.detail}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
-                <div className="border-t border-[var(--border)] pt-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <p className="font-body-bold text-xs text-[var(--text-muted)] uppercase tracking-wider">
-                      Exercises list
-                    </p>
-                    <span className="text-[10px] text-[var(--text-muted)] font-body">Rest: 60–90 seconds</span>
+                {/* Exercises List */}
+                <div className="pt-2 space-y-3">
+                  <div className="flex items-center justify-between border-b border-[#27272a] pb-2.5">
+                    <div className="flex items-center gap-2">
+                      <p className="font-display font-black text-sm text-[var(--text-primary)] uppercase tracking-wider">
+                        Main Exercises
+                      </p>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-body-bold bg-[#27272a]/60 text-[var(--text-secondary)]">
+                        7 Exercises
+                      </span>
+                    </div>
+                    <span className="text-[11px] font-body text-[var(--text-muted)] flex items-center gap-1">
+                      ⏱️ Rest: <strong className="text-[var(--text-primary)]">60–90s</strong>
+                    </span>
                   </div>
                   
-                  <div className="divide-y divide-[var(--border)]/50">
+                  <div className="space-y-2.5">
                     {PHASE1_EXERCISES.map((ex, idx) => (
-                      <div key={idx} className="flex justify-between items-center py-2 text-xs font-body">
-                        <span className="text-[var(--text-primary)] font-medium">
-                          {idx + 1}. {ex.name} <span className="text-[var(--text-muted)] font-normal text-[10px] ml-1">({ex.sets} sets × {ex.repsRange})</span>
-                        </span>
-                        <span className="text-[var(--text-muted)]">
-                          {ex.target}
-                        </span>
+                      <div
+                        key={idx}
+                        className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 rounded-2xl bg-[#18181b] border border-[#27272a] hover:border-[#3f3f46] transition-all duration-200 gap-2 shadow-sm"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="w-8 h-8 rounded-xl bg-[#09090b] border border-[#27272a] text-[var(--text-secondary)] flex items-center justify-center font-display text-xs font-black shrink-0">
+                            {idx + 1}
+                          </span>
+                          <div>
+                            <h5 className="font-display text-sm font-black text-[var(--text-primary)] tracking-wide">
+                              {ex.name}
+                            </h5>
+                            <span className="inline-block mt-0.5 text-[10px] font-body text-[var(--text-muted)]">
+                              Target: <strong className="text-[var(--text-secondary)] font-medium">{ex.target}</strong>
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-2 self-start sm:self-center">
+                          <span className="px-3 py-1 rounded-xl bg-[var(--accent-start)]/10 text-[var(--accent-text)] font-display text-xs font-bold tracking-wider">
+                            ⚡ {ex.sets} SETS × {ex.repsRange} REPS
+                          </span>
+                        </div>
                       </div>
                     ))}
                   </div>
                 </div>
 
                 {/* Cool-Down Card */}
-                <div className="p-4 rounded-xl bg-[rgba(59,130,246,0.03)] border-l-4 border-l-[var(--blue)] border-[var(--border)] space-y-2">
-                  <h4 className="font-display text-xs font-black text-[var(--blue)] uppercase tracking-wider">
-                    ❄️ Cool-Down Protocol
-                  </h4>
-                  <ol className="list-decimal pl-4 font-body text-[11px] text-[var(--text-secondary)] space-y-1">
-                    <li>Chest stretch (doorway) — 30 sec each side</li>
-                    <li>Overhead tricep stretch — 30 sec each arm</li>
-                    <li>Cross-body shoulder stretch — 30 sec each arm</li>
-                    <li>Chest opener (hands clasped behind back) — 30 sec</li>
-                    <li>Neck rolls — 30 sec</li>
-                  </ol>
+                <div className="p-5 rounded-2xl bg-[#18181b] border border-[#27272a] space-y-4 shadow-sm">
+                  <div className="flex items-center justify-between border-b border-[#27272a] pb-3">
+                    <h4 className="font-display text-sm font-black text-[var(--blue)] uppercase tracking-wider flex items-center gap-2">
+                      <span>❄️</span> COOL-DOWN PROTOCOL
+                    </h4>
+                    <span className="text-[10px] font-body-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[var(--blue)]/10 text-[var(--blue)]">
+                      ~5 Mins • 5 Stretches
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                    {[
+                      { num: "01", text: "Chest stretch (doorway)", detail: "30 sec each side" },
+                      { num: "02", text: "Overhead tricep stretch", detail: "30 sec each arm" },
+                      { num: "03", text: "Cross-body shoulder stretch", detail: "30 sec each arm" },
+                      { num: "04", text: "Chest opener (clasped hands)", detail: "30 sec hold" },
+                      { num: "05", text: "Neck rolls", detail: "30 sec slow movements" },
+                    ].map((step) => (
+                      <div key={step.num} className="flex items-center gap-3 p-3 rounded-xl bg-[#09090b] border border-[#27272a] hover:border-[#3f3f46] transition-colors">
+                        <span className="w-7 h-7 rounded-lg bg-[var(--blue)]/10 text-[var(--blue)] flex items-center justify-center font-display text-xs font-black shrink-0">
+                          {step.num}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-body text-xs font-bold text-[var(--text-primary)] leading-tight">{step.text}</p>
+                          <p className="font-body text-[10px] text-[var(--text-muted)] mt-0.5">{step.detail}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             ) : selectedDayNum === 7 ? (

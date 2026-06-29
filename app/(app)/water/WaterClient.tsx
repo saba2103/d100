@@ -38,7 +38,7 @@ function WaterBottle({ pct }: { pct: number }) {
           <stop offset="0%" stopColor="#60B8FF" />
           <stop offset="100%" stopColor="#2196F3" />
         </linearGradient>
-        <mask id="bottleMask">
+        <mask id="bottleMask" maskUnits="userSpaceOnUse" maskContentUnits="userSpaceOnUse">
           {/* White area shows, black area hides */}
           <rect x="0" y="0" width="100" height="220" fill="black" />
           <path
@@ -54,31 +54,48 @@ function WaterBottle({ pct }: { pct: number }) {
         fill="var(--bg-base)"
       />
 
-      {/* Water fill — clips to bottle shape via mask, animated height */}
-      <motion.rect
-        x="0" width="100"
-        initial={{ y: 210, height: 0 }}
-        animate={{ y: fillY * 2.1, height: clampedPct * 2.1 }}
-        transition={{ type: "spring", duration: 1.0, bounce: 0.15 }}
-        fill="url(#waterGrad)" opacity="0.85"
-        mask="url(#bottleMask)"
-      />
+      {/* Masked group for water contents — prevents browser scaling bugs during animations */}
+      <g mask="url(#bottleMask)">
+        {/* Water fill — clips to bottle shape, smooth y transition and wavy top in sync with the wave */}
+        <motion.path
+          fill="url(#waterGrad)"
+          opacity="0.85"
+          initial={{ y: 210 }}
+          animate={{
+            y: fillY * 2.1,
+            d: [
+              "M12 2 Q31 -4 50 2 Q69 8 88 2 L88 220 L12 220 Z",
+              "M12 4 Q31 8 50 2 Q69 -2 88 4 L88 220 L12 220 Z",
+              "M12 2 Q31 -4 50 2 Q69 8 88 2 L88 220 L12 220 Z",
+            ]
+          }}
+          transition={{
+            y: { type: "spring", duration: 1.0, bounce: 0.15 },
+            d: { duration: 2.5, repeat: Infinity, ease: "easeInOut" }
+          }}
+        />
 
-      {/* Ripple wave overlay */}
-      <motion.path
-        d={`M12 ${fillY * 2.1 + 2} Q31 ${fillY * 2.1 - 4} 50 ${fillY * 2.1 + 2} Q69 ${fillY * 2.1 + 8} 88 ${fillY * 2.1 + 2}`}
-        fill="none" stroke="#60B8FF" strokeWidth="2" opacity="0.5"
-        mask="url(#bottleMask)"
-        animate={{ d: [
-          `M12 ${fillY * 2.1 + 2} Q31 ${fillY * 2.1 - 4} 50 ${fillY * 2.1 + 2} Q69 ${fillY * 2.1 + 8} 88 ${fillY * 2.1 + 2}`,
-          `M12 ${fillY * 2.1 + 4} Q31 ${fillY * 2.1 + 8} 50 ${fillY * 2.1 + 2} Q69 ${fillY * 2.1 - 2} 88 ${fillY * 2.1 + 4}`,
-          `M12 ${fillY * 2.1 + 2} Q31 ${fillY * 2.1 - 4} 50 ${fillY * 2.1 + 2} Q69 ${fillY * 2.1 + 8} 88 ${fillY * 2.1 + 2}`,
-        ]}}
-        transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-      />
+        {/* Ripple wave overlay */}
+        <motion.path
+          fill="none" stroke="#60B8FF" strokeWidth="2" opacity="0.5"
+          initial={{ y: 210 }}
+          animate={{
+            y: fillY * 2.1,
+            d: [
+              "M12 2 Q31 -4 50 2 Q69 8 88 2",
+              "M12 4 Q31 8 50 2 Q69 -2 88 4",
+              "M12 2 Q31 -4 50 2 Q69 8 88 2",
+            ]
+          }}
+          transition={{
+            y: { type: "spring", duration: 1.0, bounce: 0.15 },
+            d: { duration: 2.5, repeat: Infinity, ease: "easeInOut" }
+          }}
+        />
 
-      {/* Shine */}
-      <rect x="20" y="70" width="8" height="80" rx="4" fill="white" opacity="0.12" mask="url(#bottleMask)" />
+        {/* Shine */}
+        <rect x="20" y="70" width="8" height="80" rx="4" fill="white" opacity="0.12" />
+      </g>
 
       {/* Bottle outline stroke drawn on top for clean edges */}
       <path
@@ -113,6 +130,18 @@ export function WaterTrackerClient({
       { user_id: userId, stat_date: today, water_ml: newMl, water_goal_ml: waterGoal, profile_tag: activeProfile },
       { onConflict: "user_id,stat_date,profile_tag" }
     );
+    if (newMl >= waterGoal && waterMl < waterGoal) {
+      fetch("/api/events/log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventType: "water_goal_hit",
+          profileTag: activeProfile,
+          goalMl: waterGoal,
+        }),
+      }).catch(() => {});
+    }
+
     await triggerBadgeCheck();
     setSaving(false);
   };

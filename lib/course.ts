@@ -37,13 +37,20 @@ export interface CoursePhase {
   id: number;
   name: string;
   locked: boolean;
+  isDrip?: boolean;
   lessons: CourseLesson[];
 }
 
 export const COURSE_PHASES: CoursePhase[] = [
   {
+    id: 0,
+    name: "Introduction",
+    locked: false,
+    lessons: [],
+  },
+  {
     id: 1,
-    name: "Phase 1",
+    name: "Phase 1 | Foundation Week | Day (1-7)",
     locked: false,
     lessons: [
       {
@@ -127,13 +134,25 @@ export const COURSE_PHASES: CoursePhase[] = [
   },
   {
     id: 2,
-    name: "Phase 2",
-    locked: true,
+    name: "Phase 2 | BUILDING THE BASE | Day (8-35)",
+    locked: false,
     lessons: [],
   },
   {
     id: 3,
-    name: "Phase 3",
+    name: "Phase 3 | MUSCLE BUILDING MODE | Day (36-63)",
+    locked: true,
+    lessons: [],
+  },
+  {
+    id: 4,
+    name: "Phase 4 | SHREDDING PHASE | Day (64-91)",
+    locked: true,
+    lessons: [],
+  },
+  {
+    id: 5,
+    name: "Phase 5 | PEAK WEEK | Day (92-100)",
     locked: true,
     lessons: [],
   },

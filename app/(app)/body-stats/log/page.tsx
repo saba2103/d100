@@ -8,10 +8,10 @@ export const metadata: Metadata = {
   description: "Manually log body measurements or import from Cult Smart Scale.",
 };
 
-export default async function LogMeasurementPage() {
+export default async function LogMeasurementPage({ searchParams }: { searchParams: { edit?: string } }) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  return <LogMeasurementClient userId={user.id} />;
+  return <LogMeasurementClient userId={user.id} editId={searchParams.edit} />;
 }

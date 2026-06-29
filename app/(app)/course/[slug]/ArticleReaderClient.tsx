@@ -101,7 +101,7 @@ export function ArticleReaderClient({
         </div>
 
         <div className="flex flex-wrap items-center gap-3 text-xs font-body text-[var(--text-secondary)]">
-          <span className="inline-flex items-center gap-1 bg-[var(--bg-surface)] border border-[var(--border)] px-2.5 py-0.5 rounded-md text-[10px]">
+          <span className="inline-flex items-center gap-1 bg-[var(--bg-surface)] border border-[#27272a] px-2.5 py-0.5 rounded-md text-[10px]">
             📋 Coach
           </span>
           <span className="flex items-center gap-1">

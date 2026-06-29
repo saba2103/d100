@@ -43,8 +43,8 @@ export function CourseClient({ phases, publishedSlugs }: CourseClientProps) {
         </p>
       </div>
 
-      {/* Phase Selector Tabs */}
-      <div className="flex p-1 bg-[var(--bg-surface)] border border-[var(--border)] rounded-2xl w-max gap-1">
+      {/* Phase Selector Stack */}
+      <div className="flex flex-col gap-3">
         {phases.map((phase) => {
           const isActive = phase.id === activePhaseId;
           return (
@@ -56,16 +56,18 @@ export function CourseClient({ phases, publishedSlugs }: CourseClientProps) {
                 }
               }}
               className={cn(
-                "flex items-center gap-2 px-4 py-2.5 rounded-xl font-display text-sm uppercase tracking-wider transition-all duration-200",
+                "flex items-center justify-between p-4 rounded-xl border font-body text-sm transition-all duration-150 text-left w-full",
                 isActive
-                  ? "bg-[var(--accent-start)] text-white shadow-lg shadow-[var(--accent-start)]/15 font-bold"
+                  ? "bg-[var(--bg-surface)] border-[var(--accent-start)] text-[var(--text-primary)] shadow-md ring-1 ring-[var(--accent-start)]/30 font-bold"
                   : phase.locked
-                  ? "text-[var(--text-muted)] opacity-50 cursor-not-allowed"
-                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                  ? "bg-[var(--bg-base)] border-[var(--border)] text-[var(--text-muted)] opacity-60 cursor-not-allowed"
+                  : "bg-[var(--bg-surface)] border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-strong)]"
               )}
             >
-              {phase.name}
-              {phase.locked && <Lock size={13} className="shrink-0" />}
+              <span className="font-medium">{phase.name}</span>
+              <div className="flex items-center gap-2">
+                {phase.locked && <Lock size={16} className="text-[var(--text-muted)] shrink-0" />}
+              </div>
             </button>
           );
         })}
@@ -112,11 +114,11 @@ export function CourseClient({ phases, publishedSlugs }: CourseClientProps) {
                         <Card variant="surface" className="p-6 h-full flex flex-col justify-between space-y-4 border-none bg-transparent">
                           {/* Top Row: Lesson Number & Attribution Badge */}
                           <div className="flex justify-between items-center">
-                            <span className="px-2.5 py-0.5 text-[10px] font-display font-black bg-[var(--accent-start)]/10 text-[var(--accent-text)] border border-[var(--accent-start)]/15 rounded-full tracking-widest uppercase">
+                            <span className="px-2.5 py-0.5 text-[10px] font-display font-black bg-[var(--accent-start)]/10 text-[var(--accent-text)] border border-[#27272a] rounded-full tracking-widest uppercase">
                               Lesson {lesson.lesson_number}
                             </span>
                             <div className="flex items-center gap-2">
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-body bg-[var(--bg-elevated)] border border-[var(--border)] text-[var(--text-secondary)] rounded-md">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-body bg-[var(--bg-elevated)] border border-[#27272a] text-[var(--text-secondary)] rounded-md">
                                 📋 Coach
                               </span>
                               {/* Progress Dot */}
@@ -191,11 +193,11 @@ export function CourseClient({ phases, publishedSlugs }: CourseClientProps) {
                         <Card variant="surface" className="p-6 h-full flex flex-col justify-between space-y-4 border-none bg-transparent">
                           {/* Top Row: Lesson Number & Attribution Badge */}
                           <div className="flex justify-between items-center">
-                            <span className="px-2.5 py-0.5 text-[10px] font-display font-black bg-[var(--amber-soft)] text-[var(--amber)] border border-[rgba(245,158,11,0.2)] rounded-full tracking-widest uppercase flex items-center gap-1">
+                            <span className="px-2.5 py-0.5 text-[10px] font-display font-black bg-[var(--amber-soft)] text-[var(--amber)] border border-[#27272a] rounded-full tracking-widest uppercase flex items-center gap-1">
                               📄 Lesson {lesson.lesson_number}
                             </span>
                             <div className="flex items-center gap-2">
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-body bg-[var(--bg-elevated)] border border-[var(--border)] text-[var(--text-secondary)] rounded-md">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-body bg-[var(--bg-elevated)] border border-[#27272a] text-[var(--text-secondary)] rounded-md">
                                 📋 Coach
                               </span>
                               {/* Progress Dot */}

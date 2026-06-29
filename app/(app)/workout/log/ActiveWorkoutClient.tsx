@@ -49,6 +49,23 @@ import { COACH_WORKOUT_PLAN } from "@/lib/workoutPlan";
 
 const PHASE1_PLAN: any[] = COACH_WORKOUT_PLAN;
 
+const WARM_UP_EXERCISES = [
+  "3 min light cardio (treadmill/cross trainer)",
+  "Arm circles — 15 each direction",
+  "Band pull-aparts — 15 reps",
+  "Push-ups — 10–15 reps (slow, controlled)",
+  "Light lateral raises — 15 reps",
+  "1 warm-up set of first exercise at 50% weight"
+];
+
+const COOL_DOWN_EXERCISES = [
+  "Chest stretch (doorway) — 30 sec each side",
+  "Overhead tricep stretch — 30 sec each arm",
+  "Cross-body shoulder stretch — 30 sec each arm",
+  "Chest opener (hands clasped behind back) — 30 sec",
+  "Neck rolls — 30 sec"
+];
+
 export function ActiveWorkoutClient({
   profile,
   lastWorkout,
@@ -71,6 +88,35 @@ export function ActiveWorkoutClient({
   const [isDiscardModalOpen, setIsDiscardModalOpen] = useState(false);
   const [isAddExerciseModalOpen, setIsAddExerciseModalOpen] = useState(false);
   const [newExerciseName, setNewExerciseName] = useState("");
+
+  // Warm-up and Cool-down checked states
+  const [completedWarmUp, setCompletedWarmUp] = useState<boolean[]>(() => {
+    if (isEditing && currentWorkout?.notes) {
+      try {
+        const parsed = JSON.parse(currentWorkout.notes);
+        if (Array.isArray(parsed.warmup) && parsed.warmup.length === WARM_UP_EXERCISES.length) {
+          return parsed.warmup;
+        }
+      } catch (e) {
+        // Fallback
+      }
+    }
+    return Array(WARM_UP_EXERCISES.length).fill(false);
+  });
+
+  const [completedCoolDown, setCompletedCoolDown] = useState<boolean[]>(() => {
+    if (isEditing && currentWorkout?.notes) {
+      try {
+        const parsed = JSON.parse(currentWorkout.notes);
+        if (Array.isArray(parsed.cooldown) && parsed.cooldown.length === COOL_DOWN_EXERCISES.length) {
+          return parsed.cooldown;
+        }
+      } catch (e) {
+        // Fallback
+      }
+    }
+    return Array(COOL_DOWN_EXERCISES.length).fill(false);
+  });
 
   const programDay = React.useMemo(() => {
     if (!profile?.program_start_date) return 1;
@@ -277,6 +323,10 @@ export function ActiveWorkoutClient({
     }));
 
     const duration = Math.ceil(secondsElapsed / 60);
+    const notesPayload = JSON.stringify({
+      warmup: completedWarmUp,
+      cooldown: completedCoolDown,
+    });
 
     let dbRes;
     if (isEditing && currentWorkout?.id) {
@@ -285,6 +335,7 @@ export function ActiveWorkoutClient({
         .update({
           exercises: payloadExercises,
           duration_minutes: duration,
+          notes: notesPayload,
         })
         .eq("id", currentWorkout.id);
     } else {
@@ -295,6 +346,7 @@ export function ActiveWorkoutClient({
           .update({
             exercises: payloadExercises,
             duration_minutes: duration,
+            notes: notesPayload,
           })
           .eq("id", currentWorkout.id);
       } else {
@@ -304,12 +356,23 @@ export function ActiveWorkoutClient({
           phase: 1, // Phase 1 default
           exercises: payloadExercises,
           duration_minutes: duration,
+          notes: notesPayload,
           profile_tag: activeProfile,
         });
       }
     }
 
     if (!dbRes.error) {
+      fetch("/api/events/log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventType: "workout_completed",
+          profileTag: activeProfile,
+          dayNumber: 1,
+        }),
+      }).catch(() => {});
+
       await triggerBadgeCheck();
       router.push("/workout");
       router.refresh();
@@ -378,18 +441,56 @@ export function ActiveWorkoutClient({
 
       {/* Warm-Up Card */}
       {showCoachPlan && PHASE1_PLAN.length > 0 && (
-        <Card variant="surface" className="p-4 border-l-4 border-l-[var(--accent-start)] space-y-2">
-          <h3 className="font-display text-sm font-black text-[var(--accent-text)] uppercase tracking-wider flex items-center gap-1.5">
-            🔥 Warm-Up Protocol
-          </h3>
-          <ol className="list-decimal pl-4 font-body text-xs text-[var(--text-secondary)] space-y-1">
-            <li>3 min light cardio (treadmill/cross trainer)</li>
-            <li>Arm circles — 15 each direction</li>
-            <li>Band pull-aparts — 15 reps</li>
-            <li>Push-ups — 10–15 reps (slow, controlled)</li>
-            <li>Light lateral raises — 15 reps</li>
-            <li>1 warm-up set of first exercise at 50% weight</li>
-          </ol>
+        <Card variant="surface" className="p-5 bg-[#18181b] border border-[#27272a] space-y-4">
+          <div className="flex items-center justify-between border-b border-[#27272a] pb-3">
+            <h3 className="font-display text-sm font-black text-[var(--accent-text)] uppercase tracking-wider flex items-center gap-2">
+              <span>🔥</span> WARM-UP PROTOCOL
+            </h3>
+            <span className="text-[10px] font-body-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[var(--accent-start)]/10 text-[var(--accent-text)]">
+              ~6 Mins • Tap to Check
+            </span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+            {WARM_UP_EXERCISES.map((exercise, index) => {
+              const isChecked = completedWarmUp[index];
+              const numStr = String(index + 1).padStart(2, '0');
+              return (
+                <div
+                  key={index}
+                  onClick={() => {
+                    const updated = [...completedWarmUp];
+                    updated[index] = !updated[index];
+                    setCompletedWarmUp(updated);
+                  }}
+                  className={cn(
+                    "flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer select-none",
+                    isChecked
+                      ? "bg-[rgba(249,115,22,0.12)] border-[rgba(249,115,22,0.3)] text-[var(--text-muted)]"
+                      : "bg-[#09090b] border-[#27272a] hover:border-[#3f3f46] text-[var(--text-primary)]"
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "w-6 h-6 rounded-lg flex items-center justify-center font-display text-[10px] font-black shrink-0 transition-colors",
+                      isChecked
+                        ? "bg-[var(--accent-start)] text-white"
+                        : "bg-[var(--accent-start)]/10 text-[var(--accent-text)]"
+                    )}
+                  >
+                    {isChecked ? <Check size={12} weight="bold" /> : numStr}
+                  </span>
+                  <span
+                    className={cn(
+                      "font-body text-xs font-medium leading-snug transition-colors flex-1",
+                      isChecked && "line-through opacity-75"
+                    )}
+                  >
+                    {exercise}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
         </Card>
       )}
 
@@ -529,17 +630,56 @@ export function ActiveWorkoutClient({
 
         {/* Cool-Down Card */}
         {showCoachPlan && PHASE1_PLAN.length > 0 && (
-          <Card variant="surface" className="p-4 border-l-4 border-l-[var(--blue)] space-y-2">
-            <h3 className="font-display text-sm font-black text-[var(--blue)] uppercase tracking-wider flex items-center gap-1.5">
-              ❄️ Cool-Down Protocol
-            </h3>
-            <ol className="list-decimal pl-4 font-body text-xs text-[var(--text-secondary)] space-y-1">
-              <li>Chest stretch (doorway) — 30 sec each side</li>
-              <li>Overhead tricep stretch — 30 sec each arm</li>
-              <li>Cross-body shoulder stretch — 30 sec each arm</li>
-              <li>Chest opener (hands clasped behind back) — 30 sec</li>
-              <li>Neck rolls — 30 sec</li>
-            </ol>
+          <Card variant="surface" className="p-5 bg-[#18181b] border border-[#27272a] space-y-4">
+            <div className="flex items-center justify-between border-b border-[#27272a] pb-3">
+              <h3 className="font-display text-sm font-black text-[var(--blue)] uppercase tracking-wider flex items-center gap-2">
+                <span>❄️</span> COOL-DOWN PROTOCOL
+              </h3>
+              <span className="text-[10px] font-body-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[var(--blue)]/10 text-[var(--blue)]">
+                ~5 Mins • Tap to Check
+              </span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+              {COOL_DOWN_EXERCISES.map((exercise, index) => {
+                const isChecked = completedCoolDown[index];
+                const numStr = String(index + 1).padStart(2, '0');
+                return (
+                  <div
+                    key={index}
+                    onClick={() => {
+                      const updated = [...completedCoolDown];
+                      updated[index] = !updated[index];
+                      setCompletedCoolDown(updated);
+                    }}
+                    className={cn(
+                      "flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer select-none",
+                      isChecked
+                        ? "bg-[rgba(59,130,246,0.12)] border-[rgba(59,130,246,0.3)] text-[var(--text-muted)]"
+                        : "bg-[#09090b] border-[#27272a] hover:border-[#3f3f46] text-[var(--text-primary)]"
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "w-6 h-6 rounded-lg flex items-center justify-center font-display text-[10px] font-black shrink-0 transition-colors",
+                        isChecked
+                          ? "bg-[var(--blue)] text-white"
+                          : "bg-[var(--blue)]/10 text-[var(--blue)]"
+                      )}
+                    >
+                      {isChecked ? <Check size={12} weight="bold" /> : numStr}
+                    </span>
+                    <span
+                      className={cn(
+                        "font-body text-xs font-medium leading-snug transition-colors flex-1",
+                        isChecked && "line-through opacity-75"
+                      )}
+                    >
+                      {exercise}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </Card>
         )}
       </div>

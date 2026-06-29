@@ -39,8 +39,11 @@ export async function checkAndAwardBadges(userId: string, profileTag: "S" | "A" 
 
   if (startStr) {
     const start = new Date(startStr);
-    const diffTime = today.getTime() - start.getTime();
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    start.setHours(0, 0, 0, 0);
+    const target = new Date(today);
+    target.setHours(0, 0, 0, 0);
+    const diffTime = target.getTime() - start.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1;
     program_day = Math.max(1, diffDays);
 
     // Calculate missed workouts on Mon/Wed/Fri between start date and today (excluding today)

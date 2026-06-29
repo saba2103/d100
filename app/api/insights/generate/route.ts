@@ -53,19 +53,12 @@ export async function POST(request: Request) {
       }
     }
 
-    // 1. Fetch User Settings & API key
+    // 1. Fetch User Settings
     const { data: settings } = await supabase
       .from("user_settings")
       .select("*")
       .eq("user_id", user.id)
       .single();
-
-    if (!settings || !settings.ai_api_key_encrypted) {
-      return NextResponse.json(
-        { error: "Add your AI API key in Settings to enable AI insights" },
-        { status: 400 }
-      );
-    }
 
     // 2. Check Daily Rate Limit (1 generation per profile per calendar day)
     const todayStart = new Date();
@@ -100,8 +93,8 @@ export async function POST(request: Request) {
     let insight = "";
     try {
       insight = await callAI({
-        provider: settings.ai_provider || "openai",
-        encryptedApiKey: settings.ai_api_key_encrypted,
+        provider: "anthropic",
+        encryptedApiKey: null,
         systemPrompt,
         userPrompt,
       });

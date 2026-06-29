@@ -232,13 +232,9 @@ body {
   }
 }
 
-/* Bottom navigation active icon gradient */
+/* Bottom navigation active icon styling */
 .active-nav-icon {
-  background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
-  -webkit-background-clip: text !important;
-  -webkit-text-fill-color: transparent !important;
-  background-clip: text !important;
-  color: transparent !important;
+  color: var(--accent-text) !important;
 }
 
 /* Checklist row flashes */
