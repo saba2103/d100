@@ -189,7 +189,7 @@ export default async function PastWorkoutPage({
 
         {exercises.map((ex, exIdx) => (
           <Card key={exIdx} variant="surface" className="p-4 space-y-3">
-            <div className="flex items-center justify-between border-b border-[var(--border)]/50 pb-2">
+            <div className="flex items-center justify-between pb-3">
               <h3 className="font-display text-base font-black text-[var(--text-primary)]">
                 {ex.name}
               </h3>
