@@ -148,8 +148,8 @@ export function Toast({ message, type = "success", onClose, duration = 3000 }: T
         "fixed z-[100] flex items-center justify-between gap-4 p-4 rounded-xl border shadow-lg max-w-md w-auto",
         "top-4 right-4 left-4 sm:left-auto", // top-right desktop, top mobile
         type === "success"
-          ? "bg-[var(--bg-surface)] border-[var(--green)]/20 text-[var(--green)]"
-          : "bg-[var(--bg-surface)] border-[var(--red)]/20 text-[var(--red)]"
+          ? "bg-[var(--bg-surface)] border-[var(--border)] text-[var(--green)]"
+          : "bg-[var(--bg-surface)] border-[var(--border)] text-[var(--red)]"
       )}
     >
       <span className="font-body text-xs font-body-bold text-[var(--text-primary)]">

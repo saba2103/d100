@@ -170,7 +170,7 @@ export default async function PastWorkoutPage({
 
       {/* Completion Trophy Card */}
       {completedSets === totalSets && totalSets > 0 && (
-        <Card variant="surface" className="p-4 bg-gradient-to-r from-[rgba(16,185,129,0.06)] to-transparent border-[var(--green)]/20 flex items-center gap-3">
+        <Card variant="surface" className="p-4 bg-gradient-to-r from-[rgba(16,185,129,0.06)] to-transparent border-[var(--border)] flex items-center gap-3">
           <div className="p-2 bg-[var(--green-soft)] text-[var(--green)] rounded-xl shrink-0">
             <Trophy size={20} weight="fill" />
           </div>
@@ -236,11 +236,11 @@ export default async function PastWorkoutPage({
                     {/* Status Badge */}
                     <div className="col-span-3 text-right">
                       {set.completed ? (
-                        <span className="inline-block px-2.5 py-0.5 rounded-full bg-[var(--green-soft)] text-[var(--green)] border border-[var(--green)]/20 font-body-bold text-[9px] uppercase tracking-wider">
+                        <span className="inline-block px-2.5 py-0.5 rounded-full bg-[var(--green-soft)] text-[var(--green)] font-body-bold text-[9px] uppercase tracking-wider">
                           Done
                         </span>
                       ) : (
-                        <span className="inline-block px-2.5 py-0.5 rounded-full bg-[var(--red-soft)] text-[var(--red)] border border-[var(--red)]/20 font-body-bold text-[9px] uppercase tracking-wider">
+                        <span className="inline-block px-2.5 py-0.5 rounded-full bg-[var(--red-soft)] text-[var(--red)] font-body-bold text-[9px] uppercase tracking-wider">
                           Missed
                         </span>
                       )}

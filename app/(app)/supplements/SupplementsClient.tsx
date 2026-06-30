@@ -481,7 +481,7 @@ export function SupplementsClient({ userId, today, initialLogs, isReadOnly = fal
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="p-3 rounded-xl bg-[var(--green-soft)] border border-[var(--green)]/20 text-center"
+              className="p-3 rounded-xl bg-[var(--green-soft)] text-center"
             >
               <p className="font-body-bold text-xs text-[var(--green)]">
                 All done! 💪 You have taken all your supplements for today.

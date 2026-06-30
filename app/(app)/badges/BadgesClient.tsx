@@ -134,7 +134,7 @@ export function BadgesClient({ earnedList, stats }: BadgesClientProps) {
                       <ProgramBadge badgeId={badge.id} earned={true} size={90} delay={index * 0.4} />
 
                       <div className="mt-3 text-center space-y-1 relative z-10">
-                        <span className="block font-body text-[9px] font-body-bold text-[var(--green)] uppercase tracking-widest bg-[rgba(16,185,129,0.08)] border border-[var(--green)]/15 px-2 py-0.5 rounded-full mx-auto w-max">
+                        <span className="block font-body text-[9px] font-body-bold text-[var(--green)] uppercase tracking-widest bg-[rgba(16,185,129,0.08)] px-2 py-0.5 rounded-full mx-auto w-max">
                           Unlocked
                         </span>
                         {formattedDate && (
@@ -192,10 +192,10 @@ export function BadgesClient({ earnedList, stats }: BadgesClientProps) {
                      <div className="mt-4 text-center w-full space-y-1">
                        <span
                          className={cn(
-                           "inline-block font-body text-[9px] font-body-bold px-2.5 py-0.5 rounded-full border",
+                           "inline-block font-body text-[9px] font-body-bold px-2.5 py-0.5 rounded-full",
                            failed
-                             ? "bg-[rgba(239,68,68,0.06)] text-[var(--red)] border-[var(--red)]/15"
-                             : "bg-[var(--bg-base)] text-[var(--text-muted)] border-[var(--border)]"
+                             ? "bg-[rgba(239,68,68,0.06)] text-[var(--red)]"
+                             : "bg-[var(--bg-base)] text-[var(--text-muted)] border border-[var(--border)]"
                          )}
                        >
                          {progressText}
