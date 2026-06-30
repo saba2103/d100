@@ -540,7 +540,7 @@ export function ActiveWorkoutClient({
                     <div className="grid grid-cols-12 gap-3 text-[10px] font-body font-body-bold text-[var(--text-muted)] uppercase tracking-wider px-2">
                       <span className="col-span-2 text-center">Set</span>
                       <span className="col-span-3">{isPlank ? "Secs" : "Mins"}</span>
-                      <span className="col-span-4">{isDurationType ? "Mins" : "Weight (kg)"}</span>
+                      <span className="col-span-4">{isPlank ? "Secs" : isCardio ? "Mins" : "Weight (kg)"}</span>
                       <span className="col-span-3 text-center">Done</span>
                     </div>
 

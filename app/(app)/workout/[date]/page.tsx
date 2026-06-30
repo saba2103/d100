@@ -223,13 +223,13 @@ export default async function PastWorkoutPage({
                       </span>
                     </div>
 
-                    {/* Metric 2: Weight / Mins */}
+                    {/* Metric 2: Weight / Secs / Mins */}
                     <div className="col-span-3 text-center">
                       <span className="font-display font-black text-sm text-[var(--text-primary)]">
                         {set.weight_kg || "0"}
                       </span>
                       <span className="text-[var(--text-muted)] text-[9px] uppercase font-bold tracking-wider ml-1">
-                        {isDurationType ? "min" : "kg"}
+                        {isPlank ? "sec" : isCardio ? "min" : "kg"}
                       </span>
                     </div>
 
