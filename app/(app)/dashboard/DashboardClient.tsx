@@ -36,6 +36,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { AIInsightCard } from "@/components/features/AIInsightCard";
 import { StoriesBar } from "@/components/features/StoriesBar";
+import { useAppUser } from "@/lib/contexts/AppContext";
 
 interface DashboardClientProps {
   profile: any;
@@ -71,6 +72,8 @@ export default function DashboardClient({
   isReadOnly = false,
 }: DashboardClientProps) {
   const router = useRouter();
+  const supabase = createClient();
+  const { isPartnerConnected } = useAppUser();
   const [refreshing, setRefreshing] = useState(false);
   const [touchStart, setTouchStart] = useState(0);
 
@@ -376,6 +379,7 @@ export default function DashboardClient({
         profileName={profile?.full_name || "Athlete"}
         userId={profile?.id || ""}
         programStartDate={profile?.program_start_date || null}
+        isPartnerConnected={isPartnerConnected}
       />
 
       {/* 1. HERO CARD */}

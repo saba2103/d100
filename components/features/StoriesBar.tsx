@@ -13,6 +13,7 @@ interface StoriesBarProps {
   profileName: string;
   userId: string;
   programStartDate: string | null;
+  isPartnerConnected: boolean;
 }
 
 interface StorySlide {
@@ -53,7 +54,7 @@ function getDayNumber(dateStr: string, startDate: string): number {
   return Math.round((d.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 }
 
-export function StoriesBar({ activeProfile, programDay, workoutStreak, profileName, userId, programStartDate }: StoriesBarProps) {
+export function StoriesBar({ activeProfile, programDay, workoutStreak, profileName, userId, programStartDate, isPartnerConnected }: StoriesBarProps) {
   const [viewedStories, setViewedStories] = useState<Record<string, boolean>>({});
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
   const [activeSlideIdx, setActiveSlideIdx] = useState(0);
@@ -182,7 +183,7 @@ export function StoriesBar({ activeProfile, programDay, workoutStreak, profileNa
   const storyGroups: StoryGroup[] = [
     {
       id: "your_progress",
-      title: "Your Progress",
+      title: "you",
       avatarText: activeProfile,
       avatarBg: "bg-gradient-to-tr from-[#FF6B00] to-[#FFAA00]",
       avatarUrl: activeProfile === "S" ? sabaAvatar : ancyAvatar,
@@ -193,11 +194,11 @@ export function StoriesBar({ activeProfile, programDay, workoutStreak, profileNa
     },
     {
       id: "partner_progress",
-      title: "Partner Sync",
+      title: "partner",
       avatarText: activeProfile === "S" ? "A" : "S",
       avatarBg: "bg-gradient-to-tr from-purple-600 to-pink-500",
-      avatarUrl: activeProfile === "S" ? ancyAvatar : sabaAvatar,
-      locked: false,
+      avatarUrl: activeProfile === "S" && isPartnerConnected ? ancyAvatar : activeProfile === "A" && isPartnerConnected ? sabaAvatar : null,
+      locked: !isPartnerConnected,
       unlockedDayMin: 1,
       slides: [
         {
@@ -530,7 +531,12 @@ export function StoriesBar({ activeProfile, programDay, workoutStreak, profileNa
   };
 
   const openGroup = (group: StoryGroup) => {
-    if (group.locked) return;
+    if (group.locked) {
+      if (group.id === "partner_progress") {
+        window.location.href = "/profile";
+      }
+      return;
+    }
     setActiveGroupId(group.id);
     setActiveSlideIdx(0);
     markStoryAsViewed(group.id);
@@ -542,12 +548,6 @@ export function StoriesBar({ activeProfile, programDay, workoutStreak, profileNa
           STORIES BUBBLES SCROLLABLE BAR
           ━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <div className="space-y-2">
-        <div className="flex items-center justify-between px-1">
-          <span className="font-body text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider flex items-center gap-1.5">
-            <Sparkle size={14} weight="fill" className="text-[#FF6B00]" /> D100 Stories &amp; Course Guides
-          </span>
-        </div>
-
         <div className="flex items-center gap-4 overflow-x-auto pb-2 pt-1 scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
           {storyGroups.map((group) => {
             const isViewed = viewedStories[group.id];
@@ -556,7 +556,7 @@ export function StoriesBar({ activeProfile, programDay, workoutStreak, profileNa
               <button
                 key={group.id}
                 onClick={() => openGroup(group)}
-                disabled={group.locked}
+                disabled={group.locked && group.id !== "partner_progress"}
                 className="flex flex-col items-center gap-1.5 shrink-0 group focus:outline-none"
               >
                 {/* Bubble Ring */}
@@ -579,7 +579,11 @@ export function StoriesBar({ activeProfile, programDay, workoutStreak, profileNa
                       />
                     ) : (
                       <div className={cn("w-full h-full rounded-full flex items-center justify-center font-display font-black text-sm text-white shadow-inner", group.avatarBg)}>
-                        {group.avatarText}
+                        {group.id === "partner_progress" && !isPartnerConnected ? (
+                          <Lock size={18} weight="bold" />
+                        ) : (
+                          group.avatarText
+                        )}
                       </div>
                     )}
 
