@@ -46,13 +46,15 @@ export default async function PastWorkoutPage({
   const target = await getProfileQueryTarget(supabase, user.id);
 
   // Retrieve workout logs for this date
-  const { data: log, error } = await supabase
+  const { data: logs, error } = await supabase
     .from("workout_logs")
     .select("*")
     .eq("user_id", target.userId)
     .eq("profile_tag", target.profileTag)
     .eq("logged_at", date)
-    .maybeSingle();
+    .order("created_at", { ascending: false });
+
+  const log = logs && logs.length > 0 ? logs[0] : null;
 
   if (error || !log) {
     // If no log exists for this date, show a simple fallback screen

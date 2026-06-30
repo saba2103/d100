@@ -89,7 +89,7 @@ export default async function DashboardPage() {
       .eq("user_id", target.userId)
       .eq("profile_tag", target.profileTag)
       .eq("logged_at", todayStr)
-      .maybeSingle(),
+      .order("created_at", { ascending: false }),
     
     supabase
       .from("supplement_logs")
@@ -143,7 +143,7 @@ export default async function DashboardPage() {
       profile={profile}
       settings={settings}
       initialDailyStats={dailyStatsRes.data}
-      initialWorkoutLog={workoutLogRes.data}
+      initialWorkoutLog={workoutLogRes.data && workoutLogRes.data.length > 0 ? workoutLogRes.data[0] : null}
       initialSupplementLog={supplementLogRes.data}
       initialNutritionLogs={nutritionLogsRes.data || []}
       bodyMeasurements={bodyMeasurementsRes.data || []}

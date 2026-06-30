@@ -70,7 +70,7 @@ export default async function LogWorkoutPage({
       .eq("user_id", target.userId)
       .eq("profile_tag", target.profileTag)
       .eq("logged_at", targetDate)
-      .maybeSingle(),
+      .order("created_at", { ascending: false }),
   ]);
 
   const profile = {
@@ -80,11 +80,13 @@ export default async function LogWorkoutPage({
     full_name: memberProfileRes.data?.full_name || profileRes.data?.full_name || (target.profileTag === "S" ? "Saba" : "Ancy"),
   };
 
+  const currentWorkout = currentWorkoutRes.data && currentWorkoutRes.data.length > 0 ? currentWorkoutRes.data[0] : null;
+
   return (
     <ActiveWorkoutClient
       profile={profile}
       lastWorkout={lastWorkoutRes.data}
-      currentWorkout={currentWorkoutRes.data}
+      currentWorkout={currentWorkout}
       targetDate={targetDate}
       isEditing={isEditing}
     />
