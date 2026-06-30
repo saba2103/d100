@@ -154,24 +154,54 @@ export function LogMeasurementClient({ userId, editId }: Props) {
     }
   };
 
+  // Compress an image File to a JPEG dataUrl at reduced quality & size
+  const compressImage = (file: File): Promise<string> =>
+    new Promise((resolve) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        const MAX_DIM = 1200; // enough for AI to read text clearly
+        let { width, height } = img;
+        if (width > MAX_DIM || height > MAX_DIM) {
+          if (width > height) { height = Math.round((height * MAX_DIM) / width); width = MAX_DIM; }
+          else { width = Math.round((width * MAX_DIM) / height); height = MAX_DIM; }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d")!;
+        ctx.drawImage(img, 0, 0, width, height);
+        URL.revokeObjectURL(url);
+        resolve(canvas.toDataURL("image/jpeg", 0.6)); // 60% quality
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); resolve(URL.createObjectURL(file)); };
+      img.src = url;
+    });
+
   const processFiles = (files: File[]) => {
     setAiError(null);
-    files.forEach((file) => {
+    files.forEach(async (file) => {
       const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const preview = reader.result as string;
-        setUploadedFiles((prev) => [
-          ...prev,
-          {
-            id: Math.random().toString(36).substring(2, 9),
-            file,
-            preview,
-            isPdf,
-          },
-        ]);
-      };
-      reader.readAsDataURL(file);
+      let preview: string;
+      if (isPdf) {
+        // PDFs can't be canvas-compressed, read as-is
+        preview = await new Promise<string>((res) => {
+          const reader = new FileReader();
+          reader.onloadend = () => res(reader.result as string);
+          reader.readAsDataURL(file);
+        });
+      } else {
+        preview = await compressImage(file);
+      }
+      setUploadedFiles((prev) => [
+        ...prev,
+        {
+          id: Math.random().toString(36).substring(2, 9),
+          file,
+          preview,
+          isPdf,
+        },
+      ]);
     });
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
@@ -195,12 +225,12 @@ export function LogMeasurementClient({ userId, editId }: Props) {
         name: item.file.name,
       }));
 
-      // Rough size estimate — base64 is ~1.33× raw size
+      // Guard against Vercel's ~4.5 MB serverless body limit
       const totalBytes = payloadFiles.reduce((sum, f) => sum + f.dataUrl.length, 0);
       const totalMB = totalBytes / 1024 / 1024;
-      if (totalMB > 18) {
+      if (totalMB > 3.5) {
         throw new Error(
-          `Files are too large (${totalMB.toFixed(1)} MB combined). Please remove some files and try again with fewer or smaller screenshots.`
+          `Files are too large (${totalMB.toFixed(1)} MB combined). Please remove some files and try again.`
         );
       }
 
