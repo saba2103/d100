@@ -1,17 +1,7 @@
 import { NextResponse } from "next/server";
 
-// Raise the body-size limit for this route — base64-encoded
-// screenshots + PDFs can easily exceed the default 4 MB ceiling.
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: "20mb",
-    },
-  },
-};
-
-// Also needed for Next.js App Router (route handlers use a different config key)
-export const maxDuration = 60; // seconds — AI call can take a while
+// Allow this route handler up to 60s — AI calls can be slow
+export const maxDuration = 60;
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || "";
 
