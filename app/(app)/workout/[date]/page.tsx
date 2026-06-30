@@ -206,7 +206,7 @@ export default async function PastWorkoutPage({
                 return (
                   <div
                     key={setIdx}
-                    className="grid grid-cols-12 gap-3 items-center py-2 px-3 rounded-xl bg-[var(--bg-base)] border border-[var(--border)]/30 text-xs font-body"
+                    className="grid grid-cols-12 gap-3 items-center py-2.5 px-4 rounded-xl bg-[var(--bg-base)] text-xs font-body"
                   >
                     {/* Set Title */}
                     <span className="col-span-3 text-[var(--text-secondary)] font-body-bold">

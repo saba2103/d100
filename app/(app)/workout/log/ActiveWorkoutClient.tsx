@@ -565,10 +565,10 @@ export function ActiveWorkoutClient({
                           <motion.div
                             key={setIdx}
                             className={cn(
-                              "grid grid-cols-12 gap-3 items-center p-1.5 rounded-xl border transition-all duration-150",
+                              "grid grid-cols-12 gap-3 items-center p-2.5 rounded-xl transition-all duration-150",
                               isChecked
-                                ? "bg-[rgba(16,185,129,0.06)] border-[var(--border)]"
-                                : "bg-[var(--bg-base)] border-[var(--border)]"
+                                ? "bg-[rgba(16,185,129,0.06)]"
+                                : "bg-[var(--bg-base)]"
                             )}
                           >
                             {/* Set Number */}
