@@ -532,13 +532,15 @@ export function ActiveWorkoutClient({
 
               {/* Set headers */}
               {(() => {
-                const isDurationType = ex.name.toLowerCase().includes("plank") || ex.name.toLowerCase().includes("cardio");
+                const isPlank = ex.name.toLowerCase().includes("plank");
+                const isCardio = ex.name.toLowerCase().includes("cardio");
+                const isDurationType = isPlank || isCardio;
                 return (
                   <>
                     <div className="grid grid-cols-12 gap-3 text-[10px] font-body font-body-bold text-[var(--text-muted)] uppercase tracking-wider px-2">
                       <span className="col-span-2 text-center">Set</span>
-                      <span className="col-span-3">{isDurationType ? "Mins" : "Reps"}</span>
-                      <span className={cn("col-span-4", isDurationType && "invisible")}>Weight (kg)</span>
+                      <span className="col-span-3">{isPlank ? "Secs" : "Mins"}</span>
+                      <span className="col-span-4">{isDurationType ? "Mins" : "Weight (kg)"}</span>
                       <span className="col-span-3 text-center">Done</span>
                     </div>
 
@@ -554,7 +556,7 @@ export function ActiveWorkoutClient({
                             className={cn(
                               "grid grid-cols-12 gap-3 items-center p-1.5 rounded-xl border transition-all duration-150",
                               isChecked
-                                ? "bg-[rgba(16,185,129,0.06)] border-[var(--green)]/30"
+                                ? "bg-[rgba(16,185,129,0.06)] border-[var(--border)]"
                                 : "bg-[var(--bg-base)] border-[var(--border)]"
                             )}
                           >
@@ -569,7 +571,7 @@ export function ActiveWorkoutClient({
                                 type="number"
                                 inputMode="numeric"
                                 value={set.reps}
-                                placeholder={prevSet?.reps?.toString() || (ex.name.toLowerCase().includes("plank") ? "1" : "10")}
+                                placeholder={prevSet?.reps?.toString() || (isPlank ? "30" : "10")}
                                 onChange={(e) =>
                                   handleUpdateSetField(exIdx, setIdx, "reps", e.target.value)
                                 }
@@ -577,23 +579,19 @@ export function ActiveWorkoutClient({
                               />
                             </div>
 
-                            {/* Weight Input */}
+                            {/* Weight/Mins Input */}
                             <div className="col-span-4 flex items-center gap-1.5">
-                              {!isDurationType ? (
-                                <input
-                                  type="number"
-                                  step="any"
-                                  inputMode="decimal"
-                                  value={set.weight_kg}
-                                  placeholder={prevSet?.weight_kg?.toString() || "0"}
-                                  onChange={(e) =>
-                                    handleUpdateSetField(exIdx, setIdx, "weight_kg", e.target.value)
-                                  }
-                                  className="w-full text-center font-body text-sm py-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-start)] transition-colors"
-                                />
-                              ) : (
-                                <div className="w-full text-center text-[10px] text-[var(--text-muted)] italic select-none">—</div>
-                              )}
+                              <input
+                                type="number"
+                                step="any"
+                                inputMode="decimal"
+                                value={set.weight_kg}
+                                placeholder={prevSet?.weight_kg?.toString() || "0"}
+                                onChange={(e) =>
+                                  handleUpdateSetField(exIdx, setIdx, "weight_kg", e.target.value)
+                                }
+                                className="w-full text-center font-body text-sm py-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-start)] transition-colors"
+                              />
                             </div>
 
                             {/* Completion check / Action */}

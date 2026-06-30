@@ -200,7 +200,9 @@ export default async function PastWorkoutPage({
 
             <div className="space-y-2">
               {(ex.sets || []).map((set: any, setIdx: number) => {
-                const isDurationType = ex.name.toLowerCase().includes("plank") || ex.name.toLowerCase().includes("cardio");
+                const isPlank = ex.name.toLowerCase().includes("plank");
+                const isCardio = ex.name.toLowerCase().includes("cardio");
+                const isDurationType = isPlank || isCardio;
                 return (
                   <div
                     key={setIdx}
@@ -214,10 +216,17 @@ export default async function PastWorkoutPage({
                       <span className="text-[var(--text-primary)] font-body-bold">
                         {set.reps || "0"}{" "}
                         <span className="text-[var(--text-muted)] font-normal font-body text-[10px]">
-                          {isDurationType ? "mins" : "reps"}
+                          {isPlank ? "secs" : isCardio ? "mins" : "reps"}
                         </span>
                       </span>
-                      {!isDurationType && (
+                      {isDurationType ? (
+                        <span className="text-[var(--text-primary)] font-body-bold">
+                          {set.weight_kg || "0"}{" "}
+                          <span className="text-[var(--text-muted)] font-normal font-body text-[10px]">
+                            mins
+                          </span>
+                        </span>
+                      ) : (
                         <span className="text-[var(--text-primary)] font-body-bold">
                           {set.weight_kg || "0"}{" "}
                           <span className="text-[var(--text-muted)] font-normal font-body text-[10px]">
