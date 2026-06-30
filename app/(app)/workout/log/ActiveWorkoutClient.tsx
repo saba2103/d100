@@ -405,7 +405,19 @@ export function ActiveWorkoutClient({
           <div className="flex items-center gap-2">
             <Clock size={20} className="text-[var(--text-muted)] animate-none" />
             <span className="font-body text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider select-none">
-              Editing Log ({currentWorkout?.duration_minutes || 0} mins)
+              Editing Log:
+            </span>
+            <input
+              type="number"
+              value={Math.round(secondsElapsed / 60)}
+              onChange={(e) => {
+                const val = parseInt(e.target.value, 10) || 0;
+                setSecondsElapsed(val * 60);
+              }}
+              className="w-14 text-center font-body text-xs font-bold py-1 px-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg-base)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-start)] transition-colors"
+            />
+            <span className="font-body text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider select-none">
+              mins
             </span>
           </div>
         )}
