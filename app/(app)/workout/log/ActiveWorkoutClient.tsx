@@ -77,8 +77,10 @@ export function ActiveWorkoutClient({
   const { activeProfile } = useAppUser();
 
   // Stopwatch States
-  const [secondsElapsed, setSecondsElapsed] = useState(0);
-  const [timerActive, setTimerActive] = useState(true);
+  const [secondsElapsed, setSecondsElapsed] = useState(() => 
+    isEditing && currentWorkout?.duration_minutes ? currentWorkout.duration_minutes * 60 : 0
+  );
+  const [timerActive, setTimerActive] = useState(() => !isEditing);
 
   // Rest Timer States
   const [restTimeLeft, setRestTimeLeft] = useState<number | null>(null);
@@ -386,18 +388,27 @@ export function ActiveWorkoutClient({
       
       {/* Top sticky timer bar */}
       <div className="sticky top-0 z-20 flex items-center justify-between py-3 px-4 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border)] shadow-md backdrop-blur-md">
-        <div className="flex items-center gap-2">
-          <Clock size={20} className="text-[var(--accent-text)]" />
-          <span className="font-display text-2xl font-black text-[var(--text-primary)] leading-none select-none">
-            {formatStopwatch(secondsElapsed)}
-          </span>
-          <button
-            onClick={() => setTimerActive(!timerActive)}
-            className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] ml-1"
-          >
-            {timerActive ? <Pause size={14} /> : <Play size={14} />}
-          </button>
-        </div>
+        {!isEditing ? (
+          <div className="flex items-center gap-2">
+            <Clock size={20} className="text-[var(--accent-text)]" />
+            <span className="font-display text-2xl font-black text-[var(--text-primary)] leading-none select-none">
+              {formatStopwatch(secondsElapsed)}
+            </span>
+            <button
+              onClick={() => setTimerActive(!timerActive)}
+              className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] ml-1"
+            >
+              {timerActive ? <Pause size={14} /> : <Play size={14} />}
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <Clock size={20} className="text-[var(--text-muted)] animate-none" />
+            <span className="font-body text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider select-none">
+              Editing Log ({currentWorkout?.duration_minutes || 0} mins)
+            </span>
+          </div>
+        )}
 
         {/* Floating Rest Countdown Timer */}
         {restTimeLeft !== null ? (
