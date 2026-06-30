@@ -531,91 +531,102 @@ export function ActiveWorkoutClient({
               </div>
 
               {/* Set headers */}
-              <div className="grid grid-cols-12 gap-3 text-[10px] font-body font-body-bold text-[var(--text-muted)] uppercase tracking-wider px-2">
-                <span className="col-span-2 text-center">Set</span>
-                <span className="col-span-3">Reps</span>
-                <span className="col-span-4">Weight (kg)</span>
-                <span className="col-span-3 text-center">Done</span>
-              </div>
+              {(() => {
+                const isDurationType = ex.name.toLowerCase().includes("plank") || ex.name.toLowerCase().includes("cardio");
+                return (
+                  <>
+                    <div className="grid grid-cols-12 gap-3 text-[10px] font-body font-body-bold text-[var(--text-muted)] uppercase tracking-wider px-2">
+                      <span className="col-span-2 text-center">Set</span>
+                      <span className="col-span-3">{isDurationType ? "Mins" : "Reps"}</span>
+                      <span className={cn("col-span-4", isDurationType && "invisible")}>Weight (kg)</span>
+                      <span className="col-span-3 text-center">Done</span>
+                    </div>
 
-              {/* Set rows */}
-              <div className="space-y-2">
-                {ex.sets.map((set, setIdx) => {
-                  const isChecked = set.completed;
-                  const prevSet = prevSets[setIdx];
+                    {/* Set rows */}
+                    <div className="space-y-2">
+                      {ex.sets.map((set, setIdx) => {
+                        const isChecked = set.completed;
+                        const prevSet = prevSets[setIdx];
 
-                  return (
-                    <motion.div
-                      key={setIdx}
-                      className={cn(
-                        "grid grid-cols-12 gap-3 items-center p-1.5 rounded-xl border transition-all duration-150",
-                        isChecked
-                          ? "bg-[rgba(16,185,129,0.06)] border-[var(--green)]/30"
-                          : "bg-[var(--bg-base)] border-[var(--border)]"
-                      )}
-                    >
-                      {/* Set Number */}
-                      <span className="col-span-2 text-center font-display text-sm font-bold text-[var(--text-secondary)]">
-                        {setIdx + 1}
-                      </span>
+                        return (
+                          <motion.div
+                            key={setIdx}
+                            className={cn(
+                              "grid grid-cols-12 gap-3 items-center p-1.5 rounded-xl border transition-all duration-150",
+                              isChecked
+                                ? "bg-[rgba(16,185,129,0.06)] border-[var(--green)]/30"
+                                : "bg-[var(--bg-base)] border-[var(--border)]"
+                            )}
+                          >
+                            {/* Set Number */}
+                            <span className="col-span-2 text-center font-display text-sm font-bold text-[var(--text-secondary)]">
+                              {setIdx + 1}
+                            </span>
 
-                      {/* Reps Input */}
-                      <div className="col-span-3">
-                        <input
-                          type="number"
-                          inputMode="numeric"
-                          value={set.reps}
-                          placeholder={prevSet?.reps?.toString() || "10"}
-                          onChange={(e) =>
-                            handleUpdateSetField(exIdx, setIdx, "reps", e.target.value)
-                          }
-                          className="w-full text-center font-body text-sm py-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-start)] transition-colors"
-                        />
-                      </div>
+                            {/* Reps/Mins Input */}
+                            <div className="col-span-3">
+                              <input
+                                type="number"
+                                inputMode="numeric"
+                                value={set.reps}
+                                placeholder={prevSet?.reps?.toString() || (ex.name.toLowerCase().includes("plank") ? "1" : "10")}
+                                onChange={(e) =>
+                                  handleUpdateSetField(exIdx, setIdx, "reps", e.target.value)
+                                }
+                                className="w-full text-center font-body text-sm py-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-start)] transition-colors"
+                              />
+                            </div>
 
-                      {/* Weight Input */}
-                      <div className="col-span-4 flex items-center gap-1.5">
-                        <input
-                          type="number"
-                          step="any"
-                          inputMode="decimal"
-                          value={set.weight_kg}
-                          placeholder={prevSet?.weight_kg?.toString() || "0"}
-                          onChange={(e) =>
-                            handleUpdateSetField(exIdx, setIdx, "weight_kg", e.target.value)
-                          }
-                          className="w-full text-center font-body text-sm py-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-start)] transition-colors"
-                        />
-                      </div>
+                            {/* Weight Input */}
+                            <div className="col-span-4 flex items-center gap-1.5">
+                              {!isDurationType ? (
+                                <input
+                                  type="number"
+                                  step="any"
+                                  inputMode="decimal"
+                                  value={set.weight_kg}
+                                  placeholder={prevSet?.weight_kg?.toString() || "0"}
+                                  onChange={(e) =>
+                                    handleUpdateSetField(exIdx, setIdx, "weight_kg", e.target.value)
+                                  }
+                                  className="w-full text-center font-body text-sm py-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-start)] transition-colors"
+                                />
+                              ) : (
+                                <div className="w-full text-center text-[10px] text-[var(--text-muted)] italic select-none">—</div>
+                              )}
+                            </div>
 
-                      {/* Completion check / Action */}
-                      <div className="col-span-3 flex items-center justify-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleToggleSetCompleted(exIdx, setIdx)}
-                          className={cn(
-                            "h-7 w-7 rounded-lg border flex items-center justify-center transition-all",
-                            isChecked
-                              ? "bg-[var(--green)] border-[var(--green)] text-white"
-                              : "border-[var(--border)] hover:border-[var(--accent-start)]/50"
-                          )}
-                        >
-                          {isChecked && <Check size={14} weight="bold" />}
-                        </button>
-                        
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveSet(exIdx, setIdx)}
-                          className="text-[var(--text-muted)] hover:text-[var(--red)] transition-colors p-1"
-                          disabled={ex.sets.length <= 1}
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
+                            {/* Completion check / Action */}
+                            <div className="col-span-3 flex items-center justify-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleToggleSetCompleted(exIdx, setIdx)}
+                                className={cn(
+                                  "h-7 w-7 rounded-lg border flex items-center justify-center transition-all",
+                                  isChecked
+                                    ? "bg-[var(--green)] border-[var(--green)] text-white"
+                                    : "border-[var(--border)] hover:border-[var(--accent-start)]/50"
+                                )}
+                              >
+                                {isChecked && <Check size={14} weight="bold" />}
+                              </button>
+                              
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveSet(exIdx, setIdx)}
+                                className="text-[var(--text-muted)] hover:text-[var(--red)] transition-colors p-1"
+                                disabled={ex.sets.length <= 1}
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  </>
+                );
+              })()}
 
               {/* Add set button */}
               <button

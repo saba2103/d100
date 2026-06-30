@@ -12,6 +12,7 @@ import {
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import type { Metadata } from "next";
+import { DeleteWorkoutButton } from "./DeleteWorkoutButton";
 
 export async function generateMetadata({
   params,
@@ -105,11 +106,14 @@ export default async function PastWorkoutPage({
           <ArrowLeft size={16} /> Workouts
         </Link>
 
-        <Link href={`/workout/log?edit=true&date=${date}`}>
-          <Button size="sm" variant="secondary">
-            <PencilSimple size={14} className="mr-1" /> Edit Log
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href={`/workout/log?edit=true&date=${date}`}>
+            <Button size="sm" variant="secondary">
+              <PencilSimple size={14} className="mr-1" /> Edit Log
+            </Button>
+          </Link>
+          <DeleteWorkoutButton logId={log.id} isReadOnly={target.userId !== user.id} />
+        </div>
       </div>
 
       {/* Main Stats Summary Header */}
@@ -195,36 +199,47 @@ export default async function PastWorkoutPage({
             </div>
 
             <div className="space-y-2">
-              {(ex.sets || []).map((set: any, setIdx: number) => (
-                <div
-                  key={setIdx}
-                  className="flex items-center justify-between py-1.5 px-2 rounded-lg bg-[var(--bg-base)] text-xs font-body"
-                >
-                  <span className="text-[var(--text-secondary)] font-medium">
-                    Set {setIdx + 1}
-                  </span>
+              {(ex.sets || []).map((set: any, setIdx: number) => {
+                const isDurationType = ex.name.toLowerCase().includes("plank") || ex.name.toLowerCase().includes("cardio");
+                return (
+                  <div
+                    key={setIdx}
+                    className="flex items-center justify-between py-1.5 px-2 rounded-lg bg-[var(--bg-base)] text-xs font-body"
+                  >
+                    <span className="text-[var(--text-secondary)] font-medium">
+                      Set {setIdx + 1}
+                    </span>
 
-                  <div className="flex items-center gap-6">
-                    <span className="text-[var(--text-primary)] font-body-bold">
-                      {set.reps || "0"} <span className="text-[var(--text-muted)] font-normal font-body text-[10px]">reps</span>
-                    </span>
-                    <span className="text-[var(--text-primary)] font-body-bold">
-                      {set.weight_kg || "0"} <span className="text-[var(--text-muted)] font-normal font-body text-[10px]">kg</span>
-                    </span>
-                    <span className="w-16 text-right">
-                      {set.completed ? (
-                        <span className="px-2 py-0.5 rounded bg-[var(--green-soft)] text-[var(--green)] font-body-bold text-[9px] uppercase">
-                          Done
+                    <div className="flex items-center gap-6">
+                      <span className="text-[var(--text-primary)] font-body-bold">
+                        {set.reps || "0"}{" "}
+                        <span className="text-[var(--text-muted)] font-normal font-body text-[10px]">
+                          {isDurationType ? "mins" : "reps"}
                         </span>
-                      ) : (
-                        <span className="px-2 py-0.5 rounded bg-[var(--border)] text-[var(--text-muted)] font-body-bold text-[9px] uppercase">
-                          Missed
+                      </span>
+                      {!isDurationType && (
+                        <span className="text-[var(--text-primary)] font-body-bold">
+                          {set.weight_kg || "0"}{" "}
+                          <span className="text-[var(--text-muted)] font-normal font-body text-[10px]">
+                            kg
+                          </span>
                         </span>
                       )}
-                    </span>
+                      <span className="w-16 text-right">
+                        {set.completed ? (
+                          <span className="px-2 py-0.5 rounded bg-[var(--green-soft)] text-[var(--green)] font-body-bold text-[9px] uppercase">
+                            Done
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded bg-[var(--border)] text-[var(--text-muted)] font-body-bold text-[9px] uppercase">
+                            Missed
+                          </span>
+                        )}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </Card>
         ))}
