@@ -60,6 +60,7 @@ export default async function DashboardPage() {
     badgesRes,
     wStreak,
     aiInsightsRes,
+    nutritionLogsRes,
   ] = await Promise.all([
     supabase
       .from("profiles")
@@ -121,6 +122,13 @@ export default async function DashboardPage() {
       .eq("user_id", target.userId)
       .eq("profile_tag", target.profileTag)
       .order("created_at", { ascending: false }),
+
+    supabase
+      .from("nutrition_logs")
+      .select("*")
+      .eq("user_id", target.userId)
+      .eq("profile_tag", target.profileTag)
+      .eq("logged_at", todayStr),
   ]);
 
   const profile = {
@@ -137,6 +145,7 @@ export default async function DashboardPage() {
       initialDailyStats={dailyStatsRes.data}
       initialWorkoutLog={workoutLogRes.data}
       initialSupplementLog={supplementLogRes.data}
+      initialNutritionLogs={nutritionLogsRes.data || []}
       bodyMeasurements={bodyMeasurementsRes.data || []}
       userBadges={badgesRes.data || []}
       workoutStreak={wStreak}

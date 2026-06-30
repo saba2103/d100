@@ -21,6 +21,9 @@ import {
   Robot,
   Trophy,
   ArrowRight,
+  Pill,
+  Scales,
+  BowlFood,
 } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils/cn";
@@ -45,6 +48,7 @@ interface DashboardClientProps {
   workoutStreak: number;
   today: string;
   initialInsights: any[];
+  initialNutritionLogs: any[];
   isReadOnly?: boolean;
 }
 
@@ -63,6 +67,7 @@ export default function DashboardClient({
   workoutStreak,
   today,
   initialInsights,
+  initialNutritionLogs,
   isReadOnly = false,
 }: DashboardClientProps) {
   const router = useRouter();
@@ -177,6 +182,14 @@ export default function DashboardClient({
   // Weight measurements trends
   const latestWeightLog = bodyMeasurements[0];
   const prevWeightLog = bodyMeasurements[1];
+
+  const takenSupps = supplements.filter(s => s.taken).length;
+  const totalSupps = supplements.length;
+
+  const totalProtein = initialNutritionLogs.reduce(
+    (sum: number, log: any) => sum + (log.items || []).reduce((s: number, i: any) => s + (i.protein_g || 0), 0),
+    0
+  );
 
   const compareLog = (key: string) => {
     if (!latestWeightLog || !prevWeightLog) return null;
@@ -416,7 +429,7 @@ export default function DashboardClient({
       </HeroCard>
 
       {/* Grid Layout: Stat Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-4">
         {/* Calories */}
         <Link href="/calories" className="block group">
           <StatCard
@@ -426,6 +439,30 @@ export default function DashboardClient({
             icon={ForkKnife}
             color="amber"
             trend={`Goal: ${caloriesGoal}`}
+            className="hover:border-[var(--accent-start)]/50 cursor-pointer transition-all duration-200"
+          />
+        </Link>
+        {/* Nutrition */}
+        <Link href="/nutrition" className="block group">
+          <StatCard
+            label="Nutrition"
+            value={Math.round(totalProtein)}
+            unit="g prot"
+            icon={BowlFood}
+            color="green"
+            trend="Macro tracking"
+            className="hover:border-[var(--accent-start)]/50 cursor-pointer transition-all duration-200"
+          />
+        </Link>
+        {/* Workout */}
+        <Link href="/workout" className="block group">
+          <StatCard
+            label="Workout"
+            value={workoutLog ? "Done" : "Pending"}
+            unit=""
+            icon={Barbell}
+            color={workoutLog ? "green" : "amber"}
+            trend={workoutLog ? "Completed" : "Goal: 1 workout"}
             className="hover:border-[var(--accent-start)]/50 cursor-pointer transition-all duration-200"
           />
         </Link>
@@ -453,15 +490,31 @@ export default function DashboardClient({
             className="hover:border-[var(--accent-start)]/50 cursor-pointer transition-all duration-200"
           />
         </Link>
-        {/* Workout */}
-        <Link href="/workout" className="block group">
+        {/* Supplements */}
+        <Link href="/supplements" className="block group">
           <StatCard
-            label="Workout"
-            value={workoutLog ? "Done" : "Pending"}
-            unit=""
-            icon={Barbell}
-            color={workoutLog ? "green" : "amber"}
-            trend={workoutLog ? "Workout completed" : "Goal: 1 workout"}
+            label="Supplements"
+            value={takenSupps}
+            unit={`/${totalSupps}`}
+            icon={Pill}
+            color={takenSupps === totalSupps && totalSupps > 0 ? "green" : "amber"}
+            trend="Daily list"
+            className="hover:border-[var(--accent-start)]/50 cursor-pointer transition-all duration-200"
+          />
+        </Link>
+        {/* Body Stats */}
+        <Link href="/body-stats" className="block group">
+          <StatCard
+            label="Weight"
+            value={latestWeightLog?.weight_kg ? Number(latestWeightLog.weight_kg).toFixed(1) : "--"}
+            unit={latestWeightLog?.weight_kg ? "kg" : ""}
+            icon={Scales}
+            color="purple"
+            trend={
+              weightDiff !== null
+                ? `${weightDiff > 0 ? "+" : ""}${weightDiff.toFixed(1)} kg vs prev`
+                : "Body composition"
+            }
             className="hover:border-[var(--accent-start)]/50 cursor-pointer transition-all duration-200"
           />
         </Link>
