@@ -17,19 +17,49 @@
 export interface ParsedMeasurement {
   measured_at: string; // YYYY-MM-DD
   weight_kg: number | null;
+  standard_weight_kg: number | null;
   bmi: number | null;
   body_fat_pct: number | null;
   body_fat_kg: number | null;
   lean_mass_kg: number | null;
+  heart_rate_bpm: number | null;
+  health_score: number | null;
+  total_body_water_kg: number | null;
+  weight_control_kg: number | null;
   bone_mass_kg: number | null;
   skeletal_muscle_mass_kg: number | null;
   skeletal_muscle_pct: number | null;
   subcutaneous_fat_pct: number | null;
+  subcutaneous_fat_kg: number | null;
   visceral_fat_level: number | null;
-  protein_pct: number | null;
+  trunk_fat_mass_kg: number | null;
+  trunk_fat_ratio_pct: number | null;
   body_water_pct: number | null;
+  protein_pct: number | null;
+  recommended_calorie_intake_kcal: number | null;
   bmr_kcal: number | null;
   metabolic_age: number | null;
+  waist_hip_ratio: number | null;
+  intracellular_water_kg: number | null;
+  extracellular_water_kg: number | null;
+  protein_mass_kg: number | null;
+  mineral_mass_kg: number | null;
+  left_arm_fat_ratio_pct: number | null;
+  right_arm_fat_ratio_pct: number | null;
+  left_arm_fat_mass_kg: number | null;
+  right_arm_fat_mass_kg: number | null;
+  left_arm_muscle_ratio_pct: number | null;
+  right_arm_muscle_ratio_pct: number | null;
+  left_arm_muscle_mass_kg: number | null;
+  right_arm_muscle_mass_kg: number | null;
+  left_leg_fat_ratio_pct: number | null;
+  right_leg_fat_ratio_pct: number | null;
+  left_leg_fat_mass_kg: number | null;
+  right_leg_fat_mass_kg: number | null;
+  left_leg_muscle_ratio_pct: number | null;
+  right_leg_muscle_ratio_pct: number | null;
+  left_leg_muscle_mass_kg: number | null;
+  right_leg_muscle_mass_kg: number | null;
   flags: Record<string, string>;
 }
 
@@ -67,10 +97,50 @@ export function parseCultScaleExport(raw: string): ParsedMeasurement {
   const today = new Date().toISOString().split("T")[0];
   const result: ParsedMeasurement = {
     measured_at: today,
-    weight_kg: null, bmi: null, body_fat_pct: null, body_fat_kg: null,
-    lean_mass_kg: null, bone_mass_kg: null, skeletal_muscle_mass_kg: null,
-    skeletal_muscle_pct: null, subcutaneous_fat_pct: null, visceral_fat_level: null,
-    protein_pct: null, body_water_pct: null, bmr_kcal: null, metabolic_age: null,
+    weight_kg: null,
+    standard_weight_kg: null,
+    bmi: null,
+    body_fat_pct: null,
+    body_fat_kg: null,
+    lean_mass_kg: null,
+    heart_rate_bpm: null,
+    health_score: null,
+    total_body_water_kg: null,
+    weight_control_kg: null,
+    bone_mass_kg: null,
+    skeletal_muscle_mass_kg: null,
+    skeletal_muscle_pct: null,
+    subcutaneous_fat_pct: null,
+    subcutaneous_fat_kg: null,
+    visceral_fat_level: null,
+    trunk_fat_mass_kg: null,
+    trunk_fat_ratio_pct: null,
+    body_water_pct: null,
+    protein_pct: null,
+    recommended_calorie_intake_kcal: null,
+    bmr_kcal: null,
+    metabolic_age: null,
+    waist_hip_ratio: null,
+    intracellular_water_kg: null,
+    extracellular_water_kg: null,
+    protein_mass_kg: null,
+    mineral_mass_kg: null,
+    left_arm_fat_ratio_pct: null,
+    right_arm_fat_ratio_pct: null,
+    left_arm_fat_mass_kg: null,
+    right_arm_fat_mass_kg: null,
+    left_arm_muscle_ratio_pct: null,
+    right_arm_muscle_ratio_pct: null,
+    left_arm_muscle_mass_kg: null,
+    right_arm_muscle_mass_kg: null,
+    left_leg_fat_ratio_pct: null,
+    right_leg_fat_ratio_pct: null,
+    left_leg_fat_mass_kg: null,
+    right_leg_fat_mass_kg: null,
+    left_leg_muscle_ratio_pct: null,
+    right_leg_muscle_ratio_pct: null,
+    left_leg_muscle_mass_kg: null,
+    right_leg_muscle_mass_kg: null,
     flags: {},
   };
 
@@ -84,6 +154,18 @@ export function parseCultScaleExport(raw: string): ParsedMeasurement {
     // Date/Time
     if (lower.includes("date") || lower.includes("time")) {
       result.measured_at = parseDate(line);
+      continue;
+    }
+
+    // Standard Weight (check before generic "weight")
+    if (lower.includes("standard weight")) {
+      result.standard_weight_kg = num;
+      continue;
+    }
+
+    // Weight Control (check before generic "weight")
+    if (lower.includes("weight control")) {
+      result.weight_control_kg = num;
       continue;
     }
 
@@ -101,9 +183,49 @@ export function parseCultScaleExport(raw: string): ParsedMeasurement {
       continue;
     }
 
+    // Heart Rate
+    if (lower.includes("heart rate")) {
+      result.heart_rate_bpm = num;
+      continue;
+    }
+
+    // Health Score
+    if (lower.includes("health score")) {
+      result.health_score = num;
+      continue;
+    }
+
+    // Recommended Calorie Intake (check before general calorie)
+    if (lower.includes("recommended calorie")) {
+      result.recommended_calorie_intake_kcal = num;
+      continue;
+    }
+
+    // Waist Hip Ratio
+    if (lower.includes("waist hip")) {
+      result.waist_hip_ratio = num;
+      continue;
+    }
+
+    // Trunk Fat Mass (check before "trunk fat ratio")
+    if (lower.includes("trunk fat mass")) {
+      result.trunk_fat_mass_kg = num;
+      continue;
+    }
+
+    // Trunk Fat Ratio
+    if (lower.includes("trunk fat ratio")) {
+      result.trunk_fat_ratio_pct = num;
+      continue;
+    }
+
     // Subcutaneous Fat (must check before generic "body fat" or "fat")
     if (lower.includes("subcutaneous")) {
-      result.subcutaneous_fat_pct = num;
+      if (lower.includes("kg") && !lower.includes("%")) {
+        result.subcutaneous_fat_kg = num;
+      } else {
+        result.subcutaneous_fat_pct = num;
+      }
       if (status) result.flags["subcutaneous_fat"] = status;
       continue;
     }
@@ -133,6 +255,74 @@ export function parseCultScaleExport(raw: string): ParsedMeasurement {
       continue;
     }
 
+    // Segmental — Arms (check before generic muscle)
+    if (lower.includes("left arm fat ratio")) {
+      result.left_arm_fat_ratio_pct = num;
+      continue;
+    }
+    if (lower.includes("right arm fat ratio")) {
+      result.right_arm_fat_ratio_pct = num;
+      continue;
+    }
+    if (lower.includes("left arm fat mass")) {
+      result.left_arm_fat_mass_kg = num;
+      continue;
+    }
+    if (lower.includes("right arm fat mass")) {
+      result.right_arm_fat_mass_kg = num;
+      continue;
+    }
+    if (lower.includes("left arm muscle ratio")) {
+      result.left_arm_muscle_ratio_pct = num;
+      continue;
+    }
+    if (lower.includes("right arm muscle ratio")) {
+      result.right_arm_muscle_ratio_pct = num;
+      continue;
+    }
+    if (lower.includes("left arm muscle mass")) {
+      result.left_arm_muscle_mass_kg = num;
+      continue;
+    }
+    if (lower.includes("right arm muscle mass")) {
+      result.right_arm_muscle_mass_kg = num;
+      continue;
+    }
+
+    // Segmental — Legs (check before generic muscle)
+    if (lower.includes("left leg fat ratio")) {
+      result.left_leg_fat_ratio_pct = num;
+      continue;
+    }
+    if (lower.includes("right leg fat ratio")) {
+      result.right_leg_fat_ratio_pct = num;
+      continue;
+    }
+    if (lower.includes("left leg fat mass")) {
+      result.left_leg_fat_mass_kg = num;
+      continue;
+    }
+    if (lower.includes("right leg fat mass")) {
+      result.right_leg_fat_mass_kg = num;
+      continue;
+    }
+    if (lower.includes("left leg muscle ratio")) {
+      result.left_leg_muscle_ratio_pct = num;
+      continue;
+    }
+    if (lower.includes("right leg muscle ratio")) {
+      result.right_leg_muscle_ratio_pct = num;
+      continue;
+    }
+    if (lower.includes("left leg muscle mass")) {
+      result.left_leg_muscle_mass_kg = num;
+      continue;
+    }
+    if (lower.includes("right leg muscle mass")) {
+      result.right_leg_muscle_mass_kg = num;
+      continue;
+    }
+
     // Skeletal Muscle
     if (lower.includes("skeletal muscle") || lower.includes("muscle mass") || lower.includes("muscle")) {
       if (lower.includes("%")) {
@@ -151,14 +341,42 @@ export function parseCultScaleExport(raw: string): ParsedMeasurement {
       continue;
     }
 
-    // Protein
-    if (lower.includes("protein")) {
-      result.protein_pct = num;
-      if (status) result.flags["protein"] = status;
+    // Mineral Mass (check before protein)
+    if (lower.includes("mineral")) {
+      result.mineral_mass_kg = num;
       continue;
     }
 
-    // Body Water
+    // Protein Mass (kg, not %) — check before generic protein
+    if (lower.includes("protein")) {
+      if (lower.includes("kg") && !lower.includes("%")) {
+        result.protein_mass_kg = num;
+      } else {
+        result.protein_pct = num;
+        if (status) result.flags["protein"] = status;
+      }
+      continue;
+    }
+
+    // Intracellular Water (check before generic water)
+    if (lower.includes("intracellular water")) {
+      result.intracellular_water_kg = num;
+      continue;
+    }
+
+    // Extracellular Water (check before generic water)
+    if (lower.includes("extracellular water")) {
+      result.extracellular_water_kg = num;
+      continue;
+    }
+
+    // Total Body Water (kg) — check before generic water %
+    if (lower.includes("total body water") || (lower.includes("water") && lower.includes("kg") && !lower.includes("%"))) {
+      result.total_body_water_kg = num;
+      continue;
+    }
+
+    // Body Water (% — water ratio)
     if (lower.includes("water") || lower.includes("body water")) {
       result.body_water_pct = num;
       if (status) result.flags["body_water"] = status;

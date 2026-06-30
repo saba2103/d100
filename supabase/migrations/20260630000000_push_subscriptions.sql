@@ -6,11 +6,11 @@ CREATE TABLE IF NOT EXISTS push_subscriptions (
   user_id      UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   subscription JSONB NOT NULL,      -- full PushSubscription object
   device_label TEXT,                -- "iPhone", "Chrome on Mac" etc
-  created_at   TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(user_id, (subscription->>'endpoint'))
+  created_at   TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_push_subscriptions_user ON push_subscriptions (user_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_push_subscriptions_user_endpoint ON push_subscriptions (user_id, ((subscription->>'endpoint')));
 
 ALTER TABLE push_subscriptions ENABLE ROW LEVEL SECURITY;
 
