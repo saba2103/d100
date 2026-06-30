@@ -13,7 +13,7 @@ import { getTodayStr } from "@/lib/utils/date";
 interface InsightItem {
   id: string;
   user_id: string;
-  profile_tag: "S" | "A";
+  profile_tag: "S" | "P";
   insight: string;
   created_at: string;
 }
@@ -37,7 +37,7 @@ interface ParsedInsight {
 
 interface InsightsClientProps {
   userId: string;
-  profileId: "S" | "A";
+  profileId: "S" | "P";
   programStartDate: string | null;
   initialHistory: InsightItem[];
   isReadOnly?: boolean;

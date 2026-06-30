@@ -39,6 +39,7 @@ export default async function SupplementsPage() {
   return (
     <SupplementsClient
       userId={target.userId}
+      profileTag={target.profileTag}
       today={todayStr}
       programStartDate={profileData?.program_start_date ?? null}
       initialLogs={logsRes || []}

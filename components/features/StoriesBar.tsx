@@ -87,7 +87,7 @@ export function StoriesBar({ activeProfile, programDay, workoutStreak, profileNa
   }, [isPartnerConnected, (profile as any)?.partner_email]);
 
   const selfLetter = profile?.display_name || "S";
-  const partnerLetter = partnerDisplayTag || "A";
+  const partnerLetter = partnerDisplayTag || "P";
 
   const [viewedStories, setViewedStories] = useState<Record<string, boolean>>({});
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
@@ -123,7 +123,7 @@ export function StoriesBar({ activeProfile, programDay, workoutStreak, profileNa
         for (const mp of memberProfiles) {
           if (mp.avatar_url) {
             if (mp.profile_tag === "S") setSelfAvatar(mp.avatar_url);
-            if (mp.profile_tag === "A") setPartnerAvatar(mp.avatar_url);
+            if (mp.profile_tag === "P") setPartnerAvatar(mp.avatar_url);
           }
         }
       }
@@ -231,7 +231,7 @@ export function StoriesBar({ activeProfile, programDay, workoutStreak, profileNa
       title: isPartnerConnected ? partnerName : "Partner",
       avatarText: partnerLetter,
       avatarBg: "bg-gradient-to-tr from-purple-600 to-pink-500",
-      avatarUrl: activeProfile === "S" && isPartnerConnected ? partnerAvatar : activeProfile === "A" && isPartnerConnected ? selfAvatar : null,
+      avatarUrl: activeProfile === "S" && isPartnerConnected ? partnerAvatar : activeProfile === "P" && isPartnerConnected ? selfAvatar : null,
       locked: !isPartnerConnected,
       unlockedDayMin: 1,
       slides: [

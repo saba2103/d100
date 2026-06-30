@@ -29,7 +29,7 @@ import { cn } from "@/lib/utils/cn";
 interface CollectionItem {
   id: string;
   user_id: string;
-  profile_tag: "S" | "A" | "both" | null;
+  profile_tag: "S" | "P" | "both" | null;
   title: string | null;
   file_url: string;
   file_type: "photo" | "pdf" | "screenshot" | "report" | "other";
@@ -55,7 +55,7 @@ export function CollectionClient({ userId, initialItems }: CollectionClientProps
   
   // Filters & State
   const [activeAlbum, setActiveAlbum] = useState<string>("All");
-  const [profileFilter, setProfileFilter] = useState<"S" | "A" | "Both">("Both");
+  const [profileFilter, setProfileFilter] = useState<"S" | "P" | "Both">("Both");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "name" | "size">("newest");
@@ -67,7 +67,7 @@ export function CollectionClient({ userId, initialItems }: CollectionClientProps
   // Edit details form states
   const [editTitle, setEditTitle] = useState("");
   const [editAlbum, setEditAlbum] = useState("");
-  const [editProfileTag, setEditProfileTag] = useState<"S" | "A" | "both" | "neither">("neither");
+  const [editProfileTag, setEditProfileTag] = useState<"S" | "P" | "both" | "neither">("neither");
   const [editTakenAt, setEditTakenAt] = useState("");
 
   // Album Tabs definitions
@@ -316,7 +316,7 @@ export function CollectionClient({ userId, initialItems }: CollectionClientProps
       // 2. Profile 3-way filter
       if (profileFilter !== "Both") {
         if (profileFilter === "S" && item.profile_tag !== "S") return false;
-        if (profileFilter === "A" && item.profile_tag !== "A") return false;
+        if (profileFilter === "P" && item.profile_tag !== "P") return false;
       }
 
       // 3. Search query
@@ -399,7 +399,7 @@ export function CollectionClient({ userId, initialItems }: CollectionClientProps
 
           {/* Profile Selector (3-way filter) */}
           <div className="flex bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl p-0.5">
-            {(["S", "A", "Both"] as const).map((tag) => (
+            {(["S", "P", "Both"] as const).map((tag) => (
               <button
                 key={tag}
                 onClick={() => setProfileFilter(tag)}
@@ -762,7 +762,7 @@ export function CollectionClient({ userId, initialItems }: CollectionClientProps
                 <div className="flex gap-2 bg-[var(--bg-elevated)] border border-[var(--border)] rounded-xl p-1 w-max">
                   {([
                     { label: "S", val: "S" },
-                    { label: "A", val: "A" },
+                    { label: "P", val: "P" },
                     { label: "Both", val: "both" },
                     { label: "None", val: "neither" },
                   ] as const).map((opt) => (

@@ -34,7 +34,7 @@ export function calculateStreakFromDates(datesSet: Set<string>, todayStr?: strin
   return streak;
 }
 
-export async function workoutStreak(supabase: any, userId: string, profileTag: "S" | "A" = "S"): Promise<number> {
+export async function workoutStreak(supabase: any, userId: string, profileTag: "S" | "P" = "S"): Promise<number> {
   const { data, error } = await supabase
     .from("workout_logs")
     .select("logged_at")
@@ -47,7 +47,7 @@ export async function workoutStreak(supabase: any, userId: string, profileTag: "
   return calculateStreakFromDates(datesSet);
 }
 
-export async function waterStreak(supabase: any, userId: string, profileTag: "S" | "A" = "S"): Promise<number> {
+export async function waterStreak(supabase: any, userId: string, profileTag: "S" | "P" = "S"): Promise<number> {
   const { data, error } = await supabase
     .from("daily_stats")
     .select("stat_date, water_ml, water_goal_ml")
@@ -64,7 +64,7 @@ export async function waterStreak(supabase: any, userId: string, profileTag: "S"
   return calculateStreakFromDates(datesSet);
 }
 
-export async function nutritionStreak(supabase: any, userId: string, profileTag: "S" | "A" = "S"): Promise<number> {
+export async function nutritionStreak(supabase: any, userId: string, profileTag: "S" | "P" = "S"): Promise<number> {
   const { data, error } = await supabase
     .from("nutrition_logs")
     .select("logged_at")
@@ -85,7 +85,7 @@ const COACH_SUPPS = [
   "Vitamin D3 + K2",
 ];
 
-export async function supplementStreak(supabase: any, userId: string, profileTag: "S" | "A" = "S"): Promise<number> {
+export async function supplementStreak(supabase: any, userId: string, profileTag: "S" | "P" = "S"): Promise<number> {
   const { data, error } = await supabase
     .from("supplement_logs")
     .select("logged_at, supplements")

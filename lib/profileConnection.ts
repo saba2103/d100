@@ -2,7 +2,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 
 export interface ProfileQueryTarget {
   userId: string;
-  profileTag: "S" | "A";
+  profileTag: "S" | "P";
   isConnected: boolean;
   partnerEmail: string | null;
   partnerName: string | null;
@@ -15,16 +15,23 @@ export interface ProfileQueryTarget {
  */
 export async function getProfileQueryTarget(
   supabase: SupabaseClient,
-  currentUserId: string
+  currentUserId: string,
+  overrideActiveProfile?: "S" | "P"
 ): Promise<ProfileQueryTarget> {
-  // 1. Fetch user settings to get active profile tag
-  const { data: settings } = await supabase
-    .from("user_settings")
-    .select("active_profile")
-    .eq("user_id", currentUserId)
-    .single();
+  let activeProfile: "S" | "P" = "S";
+  
+  if (overrideActiveProfile) {
+    activeProfile = overrideActiveProfile;
+  } else {
+    // 1. Fetch user settings to get active profile tag
+    const { data: settings } = await supabase
+      .from("user_settings")
+      .select("active_profile")
+      .eq("user_id", currentUserId)
+      .single();
 
-  const activeProfile = settings?.active_profile || "S";
+    activeProfile = (settings?.active_profile || "S") as "S" | "P";
+  }
 
   // 2. Fetch logged in user's profile info
   const { data: currentUser } = await supabase
@@ -73,9 +80,9 @@ export async function getProfileQueryTarget(
 
         // Connection established!
         return {
-          // If active profile tag is "A" (partner), we query partner's user ID and their primary tag "S"
-          userId: activeProfile === "A" ? partnerProfile.id : currentUserId,
-          profileTag: activeProfile === "A" ? "S" : "S",
+          // If active profile tag is "P" (partner), we query partner's user ID and their primary tag "S"
+          userId: activeProfile === "P" ? partnerProfile.id : currentUserId,
+          profileTag: activeProfile === "P" ? "S" : "S",
           isConnected: true,
           partnerEmail: partnerProfile.email,
           partnerName: name,
@@ -88,7 +95,7 @@ export async function getProfileQueryTarget(
   // Fallback if not connected or active profile is "S"
   return {
     userId: currentUserId,
-    profileTag: activeProfile as "S" | "A",
+    profileTag: activeProfile as "S" | "P",
     isConnected: false,
     partnerEmail: currentUser.partner_email || null,
     partnerName: null,

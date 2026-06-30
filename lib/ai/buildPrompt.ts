@@ -42,7 +42,8 @@ export interface AggregatedStats {
 export async function buildPrompt(
   supabase: SupabaseClient<Database>,
   userId: string,
-  timeframe: "7d" | "30d"
+  timeframe: "7d" | "30d",
+  profileId?: "S" | "P"
 ): Promise<{ systemPrompt: string; userPrompt: string; stats: AggregatedStats }> {
   const days = timeframe === "30d" ? 30 : 7;
   
@@ -50,6 +51,9 @@ export async function buildPrompt(
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
   const startDateStr = startDate.toISOString().split("T")[0];
+
+  const { getProfileQueryTarget } = require("@/lib/profileConnection");
+  const target = await getProfileQueryTarget(supabase, userId, profileId);
 
   // Fetch all logs in parallel
   const [
@@ -62,35 +66,40 @@ export async function buildPrompt(
     supabase
       .from("workout_logs")
       .select("*")
-      .eq("user_id", userId)
+      .eq("user_id", target.userId)
+      .eq("profile_tag", target.profileTag)
       .gte("logged_at", startDateStr)
       .order("logged_at", { ascending: false }),
     
     supabase
       .from("nutrition_logs")
       .select("*")
-      .eq("user_id", userId)
+      .eq("user_id", target.userId)
+      .eq("profile_tag", target.profileTag)
       .gte("logged_at", startDateStr)
       .order("logged_at", { ascending: false }),
     
     supabase
       .from("daily_stats")
       .select("*")
-      .eq("user_id", userId)
+      .eq("user_id", target.userId)
+      .eq("profile_tag", target.profileTag)
       .gte("stat_date", startDateStr)
       .order("stat_date", { ascending: false }),
     
     supabase
       .from("body_measurements")
       .select("*")
-      .eq("user_id", userId)
+      .eq("user_id", target.userId)
+      .eq("profile_tag", target.profileTag)
       .gte("measured_at", startDateStr)
       .order("measured_at", { ascending: false }),
     
     supabase
       .from("supplement_logs")
       .select("*")
-      .eq("user_id", userId)
+      .eq("user_id", target.userId)
+      .eq("profile_tag", target.profileTag)
       .gte("logged_at", startDateStr)
       .order("logged_at", { ascending: false }),
   ]);

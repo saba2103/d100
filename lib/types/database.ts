@@ -147,7 +147,7 @@ export interface Database {
           exercises: ExerciseEntry[];
           duration_minutes: number | null;
           notes: string | null;
-          profile_tag: "S" | "A";
+          profile_tag: "S" | "P";
           created_at: string;
         };
         Insert: {
@@ -158,7 +158,7 @@ export interface Database {
           exercises?: ExerciseEntry[];
           duration_minutes?: number | null;
           notes?: string | null;
-          profile_tag?: "S" | "A";
+          profile_tag?: "S" | "P";
           created_at?: string;
         };
         Update: {
@@ -167,7 +167,7 @@ export interface Database {
           exercises?: ExerciseEntry[];
           duration_minutes?: number | null;
           notes?: string | null;
-          profile_tag?: "S" | "A";
+          profile_tag?: "S" | "P";
         };
         Relationships: [];
       };
@@ -188,7 +188,7 @@ export interface Database {
             | null;
           items: NutritionItem[];
           notes: string | null;
-          profile_tag: "S" | "A";
+          profile_tag: "S" | "P";
           created_at: string;
         };
         Insert: {
@@ -205,7 +205,7 @@ export interface Database {
             | null;
           items?: NutritionItem[];
           notes?: string | null;
-          profile_tag?: "S" | "A";
+          profile_tag?: "S" | "P";
           created_at?: string;
         };
         Update: {
@@ -220,7 +220,7 @@ export interface Database {
             | null;
           items?: NutritionItem[];
           notes?: string | null;
-          profile_tag?: "S" | "A";
+          profile_tag?: "S" | "P";
         };
         Relationships: [];
       };
@@ -238,7 +238,7 @@ export interface Database {
           calories_consumed: number;
           calories_burned: number;
           calories_goal: number;
-          profile_tag: "S" | "A";
+          profile_tag: "S" | "P";
           created_at: string;
           updated_at: string;
         };
@@ -253,7 +253,7 @@ export interface Database {
           calories_consumed?: number;
           calories_burned?: number;
           calories_goal?: number;
-          profile_tag?: "S" | "A";
+          profile_tag?: "S" | "P";
           created_at?: string;
           updated_at?: string;
         };
@@ -265,7 +265,7 @@ export interface Database {
           calories_consumed?: number;
           calories_burned?: number;
           calories_goal?: number;
-          profile_tag?: "S" | "A";
+          profile_tag?: "S" | "P";
           updated_at?: string;
         };
         Relationships: [];
@@ -324,7 +324,7 @@ export interface Database {
           right_leg_muscle_mass_kg: number | null;
           flags: MeasurementFlags;
           notes: string | null;
-          profile_tag: "S" | "A";
+          profile_tag: "S" | "P";
           created_at: string;
         };
         Insert: {
@@ -378,7 +378,7 @@ export interface Database {
           right_leg_muscle_mass_kg?: number | null;
           flags?: MeasurementFlags;
           notes?: string | null;
-          profile_tag?: "S" | "A";
+          profile_tag?: "S" | "P";
           created_at?: string;
         };
         Update: {
@@ -430,7 +430,7 @@ export interface Database {
           right_leg_muscle_mass_kg?: number | null;
           flags?: MeasurementFlags;
           notes?: string | null;
-          profile_tag?: "S" | "A";
+          profile_tag?: "S" | "P";
         };
         Relationships: [];
       };
@@ -442,7 +442,7 @@ export interface Database {
           user_id: string;
           logged_at: string;
           supplements: SupplementEntry[];
-          profile_tag: "S" | "A";
+          profile_tag: "S" | "P";
           created_at: string;
         };
         Insert: {
@@ -450,13 +450,13 @@ export interface Database {
           user_id: string;
           logged_at?: string;
           supplements?: SupplementEntry[];
-          profile_tag?: "S" | "A";
+          profile_tag?: "S" | "P";
           created_at?: string;
         };
         Update: {
           logged_at?: string;
           supplements?: SupplementEntry[];
-          profile_tag?: "S" | "A";
+          profile_tag?: "S" | "P";
         };
         Relationships: [];
       };
@@ -467,19 +467,19 @@ export interface Database {
           id: string;
           user_id: string;
           badge_id: string;
-          profile_tag: "S" | "A";
+          profile_tag: "S" | "P";
           earned_at: string;
         };
         Insert: {
           id?: string;
           user_id: string;
           badge_id: string;
-          profile_tag?: "S" | "A";
+          profile_tag?: "S" | "P";
           earned_at?: string;
         };
         Update: {
           earned_at?: string;
-          profile_tag?: "S" | "A";
+          profile_tag?: "S" | "P";
         };
         Relationships: [];
       };
@@ -489,7 +489,7 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
-          profile_tag: "S" | "A" | "both" | null;
+          profile_tag: "S" | "P" | "both" | null;
           title: string | null;
           file_url: string;
           file_type: "photo" | "pdf" | "screenshot" | "report" | "other";
@@ -503,7 +503,7 @@ export interface Database {
         Insert: {
           id?: string;
           user_id: string;
-          profile_tag?: "S" | "A" | "both" | null;
+          profile_tag?: "S" | "P" | "both" | null;
           title?: string | null;
           file_url: string;
           file_type: "photo" | "pdf" | "screenshot" | "report" | "other";
@@ -515,7 +515,7 @@ export interface Database {
           created_at?: string;
         };
         Update: {
-          profile_tag?: "S" | "A" | "both" | null;
+          profile_tag?: "S" | "P" | "both" | null;
           title?: string | null;
           file_url?: string;
           file_type?: "photo" | "pdf" | "screenshot" | "report" | "other";
@@ -583,7 +583,7 @@ export interface Database {
           water_goal_ml: number;
           steps_goal: number;
           calories_goal: number;
-          active_profile: "S" | "A";
+          active_profile: "S" | "P";
           updated_at: string;
         };
         Insert: {
@@ -594,7 +594,7 @@ export interface Database {
           water_goal_ml?: number;
           steps_goal?: number;
           calories_goal?: number;
-          active_profile?: "S" | "A";
+          active_profile?: "S" | "P";
           updated_at?: string;
         };
         Update: {
@@ -604,7 +604,7 @@ export interface Database {
           water_goal_ml?: number;
           steps_goal?: number;
           calories_goal?: number;
-          active_profile?: "S" | "A";
+          active_profile?: "S" | "P";
           updated_at?: string;
         };
         Relationships: [];
@@ -614,7 +614,7 @@ export interface Database {
       member_profiles: {
         Row: {
           user_id: string;
-          profile_tag: "S" | "A";
+          profile_tag: "S" | "P";
           full_name: string | null;
           phone: string | null;
           height_cm: number | null;
@@ -630,7 +630,7 @@ export interface Database {
         };
         Insert: {
           user_id: string;
-          profile_tag: "S" | "A";
+          profile_tag: "S" | "P";
           full_name?: string | null;
           phone?: string | null;
           height_cm?: number | null;

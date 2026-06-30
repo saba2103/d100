@@ -22,6 +22,7 @@ import { useAppUser } from "@/lib/contexts/AppContext";
 
 interface Props {
   userId: string;
+  profileTag: "S" | "P";
   today: string;
   programStartDate: string | null;
   initialLogs: any[];
@@ -41,7 +42,7 @@ import { COACH_SUPPLEMENT_PLAN } from "@/lib/workoutPlan";
 
 const COACH_SUPPLEMENTS: any[] = COACH_SUPPLEMENT_PLAN;
 
-export function SupplementsClient({ userId, today, programStartDate, initialLogs, isReadOnly = false }: Props) {
+export function SupplementsClient({ userId, profileTag, today, programStartDate, initialLogs, isReadOnly = false }: Props) {
   const router = useRouter();
   const { activeProfile } = useAppUser();
   const [logs, setLogs] = useState(initialLogs);
@@ -115,7 +116,12 @@ export function SupplementsClient({ userId, today, programStartDate, initialLogs
     } else {
       const { data, error } = await supabase
         .from("supplement_logs")
-        .insert({ user_id: userId, logged_at: selectedDate, supplements: updated })
+        .insert({
+          user_id: userId,
+          logged_at: selectedDate,
+          supplements: updated,
+          profile_tag: profileTag,
+        })
         .select().single();
       if (!error && data) {
         setLogs(prev => [data, ...prev]);

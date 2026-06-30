@@ -19,8 +19,8 @@ interface UserContextType {
   user: User | null;
   profile: Profile | null;
   settings: UserSettings | null;
-  activeProfile: "S" | "A";
-  setActiveProfile: (profile: "S" | "A") => Promise<void>;
+  activeProfile: "S" | "P";
+  setActiveProfile: (profile: "S" | "P") => Promise<void>;
   loading: boolean;
   isPartnerConnected: boolean;
   refresh: () => Promise<void>;
@@ -100,7 +100,7 @@ export function ThemeProvider({
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const { user, profile, loading: authLoading, refresh: refreshAuth } = useAuthUser();
   const [settings, setSettings] = useState<UserSettings | null>(null);
-  const [activeProfile, setActiveProfileState] = useState<"S" | "A">("S");
+  const [activeProfile, setActiveProfileState] = useState<"S" | "P">("S");
   const [loading, setLoading] = useState(true);
   const [isPartnerConnected, setIsPartnerConnected] = useState(false);
 
@@ -122,7 +122,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     if (data) {
       setSettings(data);
-      if (data.active_profile === "S" || data.active_profile === "A") {
+      if (data.active_profile === "S" || data.active_profile === "P") {
         setActiveProfileState(data.active_profile);
       }
 
@@ -156,7 +156,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         water_goal_ml: 3000,
         steps_goal: 10000,
         calories_goal: 2000,
-        active_profile: defaultActiveProfile as "S" | "A",
+        active_profile: defaultActiveProfile as "S" | "P",
       };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: inserted } = await supabase
@@ -166,7 +166,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         .single();
       if (inserted) {
         setSettings(inserted);
-        setActiveProfileState(inserted.active_profile as "S" | "A");
+        setActiveProfileState(inserted.active_profile as "S" | "P");
       }
     }
   }, []);
@@ -203,7 +203,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user, authLoading, fetchSettings]);
 
-  const setActiveProfile = async (p: "S" | "A") => {
+  const setActiveProfile = async (p: "S" | "P") => {
     setActiveProfileState(p);
     if (user) {
       const supabase = createClient();

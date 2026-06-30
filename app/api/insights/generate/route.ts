@@ -21,14 +21,14 @@ export async function POST(request: Request) {
 
     // Parse Request Body (optional parameters)
     let timeframe: "7d" | "30d" = "7d";
-    let profileId: "S" | "A" = "S";
+    let profileId: "S" | "P" = "S";
 
     try {
       const body = await request.json();
       if (body.timeframe === "30d" || body.timeframe === "7d") {
         timeframe = body.timeframe;
       }
-      if (body.profileId === "S" || body.profileId === "A") {
+      if (body.profileId === "S" || body.profileId === "P") {
         profileId = body.profileId;
       } else {
         // Fallback to settings active profile
@@ -37,8 +37,8 @@ export async function POST(request: Request) {
           .select("active_profile")
           .eq("user_id", user.id)
           .single();
-        if (settings?.active_profile === "S" || settings?.active_profile === "A") {
-          profileId = settings.active_profile as "S" | "A";
+        if (settings?.active_profile === "S" || settings?.active_profile === "P") {
+          profileId = settings.active_profile as "S" | "P";
         }
       }
     } catch {
@@ -48,8 +48,8 @@ export async function POST(request: Request) {
         .select("active_profile")
         .eq("user_id", user.id)
         .single();
-      if (settings?.active_profile === "S" || settings?.active_profile === "A") {
-        profileId = settings.active_profile as "S" | "A";
+      if (settings?.active_profile === "S" || settings?.active_profile === "P") {
+        profileId = settings.active_profile as "S" | "P";
       }
     }
 
@@ -86,7 +86,8 @@ export async function POST(request: Request) {
     const { systemPrompt, userPrompt } = await buildPrompt(
       supabase,
       user.id,
-      timeframe
+      timeframe,
+      profileId
     );
 
     // 4. Call AI Provider

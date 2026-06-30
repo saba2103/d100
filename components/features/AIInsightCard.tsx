@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils/cn";
 
 interface AIInsightCardProps {
   userId: string;
-  profileId: "S" | "A";
+  profileId: "S" | "P";
   initialInsight: string | null;
   initialGeneratedAt: string | null;
   hasApiKey: boolean;

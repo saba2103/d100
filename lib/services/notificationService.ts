@@ -67,17 +67,17 @@ export async function sendServerNotification({
  * Helper to resolve partner user or profile names for notifications
  * 'S' -> Saba, 'A' -> Ancy
  */
-export function getProfileNames(profileTag: "S" | "A" | string) {
-  const isSaba = profileTag === "S";
-  const actorName = isSaba ? "Saba" : "Ancy";
-  const partnerName = isSaba ? "Ancy" : "Saba";
-  return { actorName, partnerName, isSaba };
+export function getProfileNames(profileTag: "S" | "P" | string) {
+  const isSelf = profileTag === "S";
+  const actorName = isSelf ? "Self" : "Partner";
+  const partnerName = isSelf ? "Partner" : "Self";
+  return { actorName, partnerName, isSelf };
 }
 
 /**
  * Event 1: Workout Completed
  */
-export async function notifyWorkoutCompleted(userId: string, profileTag: "S" | "A" | string, dayNumber: number) {
+export async function notifyWorkoutCompleted(userId: string, profileTag: "S" | "P" | string, dayNumber: number) {
   const { actorName } = getProfileNames(profileTag);
   const title = `💪 Workout Crushed!`;
   const body = `${actorName} just crushed Day ${dayNumber}'s workout`;
@@ -88,7 +88,7 @@ export async function notifyWorkoutCompleted(userId: string, profileTag: "S" | "
 /**
  * Event 2: Nutrition Logged
  */
-export async function notifyNutritionLogged(userId: string, profileTag: "S" | "A" | string) {
+export async function notifyNutritionLogged(userId: string, profileTag: "S" | "P" | string) {
   const { actorName } = getProfileNames(profileTag);
   const title = `🥗 Meals Logged`;
   const body = `${actorName} logged meals for today`;
@@ -99,7 +99,7 @@ export async function notifyNutritionLogged(userId: string, profileTag: "S" | "A
 /**
  * Event 3: Water Goal Hit
  */
-export async function notifyWaterGoalHit(userId: string, profileTag: "S" | "A" | string, goalMl: number) {
+export async function notifyWaterGoalHit(userId: string, profileTag: "S" | "P" | string, goalMl: number) {
   const { actorName } = getProfileNames(profileTag);
   const title = `💧 Water Goal Hit!`;
   const body = `${actorName} hit their ${goalMl}ml water goal today!`;
@@ -110,7 +110,7 @@ export async function notifyWaterGoalHit(userId: string, profileTag: "S" | "A" |
 /**
  * Event 4: All Supplements Checked
  */
-export async function notifySupplementsChecked(userId: string, profileTag: "S" | "A" | string) {
+export async function notifySupplementsChecked(userId: string, profileTag: "S" | "P" | string) {
   const { actorName } = getProfileNames(profileTag);
   const title = `💊 Supplements Taken`;
   const body = `${actorName} checked all daily supplements`;
@@ -121,7 +121,7 @@ export async function notifySupplementsChecked(userId: string, profileTag: "S" |
 /**
  * Event 5: Body Stats Logged
  */
-export async function notifyBodyStatsLogged(userId: string, profileTag: "S" | "A" | string, weightKg?: number) {
+export async function notifyBodyStatsLogged(userId: string, profileTag: "S" | "P" | string, weightKg?: number) {
   const { actorName } = getProfileNames(profileTag);
   const title = `⚖️ Body Stats Logged`;
   const body = weightKg ? `${actorName} logged today's weight (${weightKg} kg)` : `${actorName} logged body measurements`;
@@ -132,7 +132,7 @@ export async function notifyBodyStatsLogged(userId: string, profileTag: "S" | "A
 /**
  * Event 6: Progress Photo Added
  */
-export async function notifyProgressPhotoAdded(userId: string, profileTag: "S" | "A" | string) {
+export async function notifyProgressPhotoAdded(userId: string, profileTag: "S" | "P" | string) {
   const { actorName } = getProfileNames(profileTag);
   const title = `📸 New Photo Added`;
   const body = `${actorName} added a progress photo to Collection`;
@@ -143,7 +143,7 @@ export async function notifyProgressPhotoAdded(userId: string, profileTag: "S" |
 /**
  * Event 7: Badge Unlocked
  */
-export async function notifyBadgeUnlocked(userId: string, profileTag: "S" | "A" | string, badgeName: string) {
+export async function notifyBadgeUnlocked(userId: string, profileTag: "S" | "P" | string, badgeName: string) {
   const { actorName } = getProfileNames(profileTag);
   const title = `🏆 Badge Earned!`;
   const body = `${actorName} just earned the ${badgeName} badge!`;
@@ -154,7 +154,7 @@ export async function notifyBadgeUnlocked(userId: string, profileTag: "S" | "A" 
 /**
  * Event 8: Streak Milestone
  */
-export async function notifyStreakMilestone(userId: string, profileTag: "S" | "A" | string, streakDays: number) {
+export async function notifyStreakMilestone(userId: string, profileTag: "S" | "P" | string, streakDays: number) {
   const { actorName } = getProfileNames(profileTag);
   const title = `🔥 ${streakDays}-Day Streak!`;
   const body = `${actorName} is on a ${streakDays}-day streak!`;

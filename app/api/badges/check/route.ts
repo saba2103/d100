@@ -17,7 +17,7 @@ export async function POST(req: Request) {
       .eq("user_id", user.id)
       .single();
     const activeProfile = settings?.active_profile || "S";
-    const newBadgeIds = await checkAndAwardBadges(user.id, activeProfile as "S" | "A");
+    const newBadgeIds = await checkAndAwardBadges(user.id, activeProfile as "S" | "P");
 
     // Send push notification for each newly unlocked badge
     if (newBadgeIds && newBadgeIds.length > 0) {

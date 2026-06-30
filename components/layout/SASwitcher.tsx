@@ -15,9 +15,9 @@ export function SASwitcher({ className }: SASwitcherProps) {
   const { activeProfile, setActiveProfile, isPartnerConnected, profile } = useAppUser();
   const router = useRouter();
 
-  const [memberNames, setMemberNames] = useState<Record<"S" | "A", string>>({
+  const [memberNames, setMemberNames] = useState<Record<"S" | "P", string>>({
     S: "Self",
-    A: "Partner",
+    P: "Partner",
   });
 
   const [partnerDisplayTag, setPartnerDisplayTag] = useState<string | null>(null);
@@ -57,22 +57,22 @@ export function SASwitcher({ className }: SASwitcherProps) {
             setPartnerDisplayTag(data.display_name);
           }
           if (data.full_name) {
-            setMemberNames((prev) => ({ ...prev, A: data.full_name || "Partner" }));
+            setMemberNames((prev) => ({ ...prev, P: data.full_name || "Partner" }));
           }
         }
       });
   }, [isPartnerConnected, (profile as any)?.partner_email]);
 
-  const getLetterForTag = (tag: "S" | "A") => {
+  const getLetterForTag = (tag: "S" | "P") => {
     if (tag === "S") {
       return profile?.display_name || "S";
     } else {
-      return partnerDisplayTag || "A";
+      return partnerDisplayTag || "P";
     }
   };
 
   const selfTag = "S";
-  const partnerTag = "A";
+  const partnerTag = "P";
 
   const buttonOrder = [selfTag, partnerTag] as const;
 

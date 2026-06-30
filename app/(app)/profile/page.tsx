@@ -108,7 +108,7 @@ export default function ProfilePage() {
         .eq("user_id", user.id)
         .single();
 
-      const activeTag = (settingsData?.active_profile || activeProfile || "S") as "S" | "A";
+      const activeTag = (settingsData?.active_profile || activeProfile || "S") as "S" | "P";
 
       // 1. Fetch main profiles row for partner email, self email, and display name
       const { data: profileRow } = await (supabase
@@ -409,7 +409,7 @@ export default function ProfilePage() {
     if (!user) return;
     setSwitching(true);
     try {
-      const nextProfile = activeProfile === "S" ? "A" : "S";
+      const nextProfile = activeProfile === "S" ? "P" : "S";
 
       // Discard unsaved changes or prompt
       if (isDirty) {

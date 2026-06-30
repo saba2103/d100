@@ -28,7 +28,7 @@ export default function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
   const [album, setAlbum] = useState("progress");
-  const [profileTag, setProfileTag] = useState<"S" | "A" | "both" | "neither">("neither");
+  const [profileTag, setProfileTag] = useState<"S" | "P" | "both" | "neither">("neither");
   const [takenAt, setTakenAt] = useState("");
   const [notes, setNotes] = useState("");
 
@@ -361,7 +361,7 @@ export default function UploadPage() {
                 <div className="flex gap-2 bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl p-1 w-max">
                   {([
                     { label: "S", val: "S" },
-                    { label: "A", val: "A" },
+                    { label: "P", val: "P" },
                     { label: "Both", val: "both" },
                     { label: "None", val: "neither" },
                   ] as const).map((opt) => (

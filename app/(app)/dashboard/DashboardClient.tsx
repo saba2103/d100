@@ -127,7 +127,7 @@ export default function DashboardClient({
   const [loggingStats, setLoggingStats] = useState(false);
   const [lastCheckedSupp, setLastCheckedSupp] = useState<string | null>(null);
 
-  const activeProfileTag = settings?.active_profile === "A" ? "A" : "S";
+  const activeProfileTag = settings?.active_profile === "P" ? "P" : "S";
   const latestInsightForProfile = initialInsights.find((i) => i.profile_tag === activeProfileTag) || null;
 
   // Day Number & Phase Calculation

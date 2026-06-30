@@ -19,12 +19,15 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     const date: string = body.date; // YYYY-MM-DD
-    const profileId: "S" | "A" = body.profileId === "A" ? "A" : "S";
+    const profileId: "S" | "P" = body.profileId === "P" ? "P" : "S";
     const dayNumber: number = body.dayNumber || 1;
 
     if (!date) {
       return NextResponse.json({ error: "date is required" }, { status: 400 });
     }
+
+    const { getProfileQueryTarget } = require("@/lib/profileConnection");
+    const target = await getProfileQueryTarget(supabase, user.id, profileId);
 
     // Fetch all logs for this single day in parallel
     const [
@@ -37,30 +40,30 @@ export async function POST(request: Request) {
       supabase
         .from("workout_logs")
         .select("*")
-        .eq("user_id", user.id)
-        .eq("profile_tag", profileId)
+        .eq("user_id", target.userId)
+        .eq("profile_tag", target.profileTag)
         .eq("logged_at", date),
 
       supabase
         .from("nutrition_logs")
         .select("*")
-        .eq("user_id", user.id)
-        .eq("profile_tag", profileId)
+        .eq("user_id", target.userId)
+        .eq("profile_tag", target.profileTag)
         .eq("logged_at", date),
 
       supabase
         .from("daily_stats")
         .select("*")
-        .eq("user_id", user.id)
-        .eq("profile_tag", profileId)
+        .eq("user_id", target.userId)
+        .eq("profile_tag", target.profileTag)
         .eq("stat_date", date)
         .maybeSingle(),
 
       supabase
         .from("body_measurements")
         .select("*")
-        .eq("user_id", user.id)
-        .eq("profile_tag", profileId)
+        .eq("user_id", target.userId)
+        .eq("profile_tag", target.profileTag)
         .or(`measured_at.eq.${date},created_at.gte.${date}T00:00:00,created_at.lte.${date}T23:59:59`)
         .limit(1)
         .maybeSingle(),
@@ -68,8 +71,8 @@ export async function POST(request: Request) {
       supabase
         .from("supplement_logs")
         .select("*")
-        .eq("user_id", user.id)
-        .eq("profile_tag", profileId)
+        .eq("user_id", target.userId)
+        .eq("profile_tag", target.profileTag)
         .eq("logged_at", date)
         .maybeSingle(),
     ]);

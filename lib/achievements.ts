@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { BADGES } from "./badges";
 import { workoutStreak, waterStreak, nutritionStreak } from "./streaks";
 
-export async function checkAndAwardBadges(userId: string, profileTag: "S" | "A" = "S"): Promise<string[]> {
+export async function checkAndAwardBadges(userId: string, profileTag: "S" | "P" = "S"): Promise<string[]> {
   const supabase = createClient();
 
   // 1. Fetch member profile

@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import DashboardClient from "./DashboardClient";
@@ -41,7 +43,7 @@ export default async function DashboardPage() {
     active_profile: "S",
   };
 
-  const activeProfile = settings.active_profile as "S" | "A";
+  const activeProfile = settings.active_profile as "S" | "P";
   const target = await getProfileQueryTarget(supabase, user.id);
 
   // Sync / catch-up earned badges for target profile

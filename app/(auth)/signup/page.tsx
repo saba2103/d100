@@ -27,7 +27,7 @@ export default function SignupPage() {
   const router = useRouter();
 
   const [fullName, setFullName] = useState("");
-  const [displayName, setDisplayName] = useState<"S" | "A">("S");
+  const [displayName, setDisplayName] = useState<"S" | "P">("S");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -143,7 +143,7 @@ export default function SignupPage() {
             Profile Label
           </label>
           <div className="grid grid-cols-2 gap-2">
-            {(["S", "A"] as const).map((label) => (
+            {(["S", "P"] as const).map((label) => (
               <button
                 key={label}
                 type="button"

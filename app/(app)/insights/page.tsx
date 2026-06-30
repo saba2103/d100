@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { InsightsClient } from "./InsightsClient";
@@ -59,7 +61,7 @@ export default async function InsightsPage() {
   return (
     <InsightsClient
       userId={target.userId}
-      profileId={target.profileTag as "S" | "A"}
+      profileId={target.profileTag as "S" | "P"}
       programStartDate={profile?.program_start_date || null}
       initialHistory={(history as any) || []}
       isReadOnly={target.userId !== user.id}
