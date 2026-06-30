@@ -17,6 +17,38 @@ export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallBanner, setShowInstallBanner] = useState(false);
+  const [navigating, setNavigating] = useState(false);
+
+  useEffect(() => {
+    // Hide loading indicator when page pathname actually changes
+    setNavigating(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    const handleAnchorClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const anchor = target.closest("a");
+      if (anchor) {
+        const href = anchor.getAttribute("href");
+        const targetAttr = anchor.getAttribute("target");
+        
+        if (
+          href &&
+          href.startsWith("/") &&
+          (!targetAttr || targetAttr === "_self") &&
+          !anchor.hasAttribute("download") &&
+          href !== pathname
+        ) {
+          setNavigating(true);
+        }
+      }
+    };
+
+    document.addEventListener("click", handleAnchorClick);
+    return () => {
+      document.removeEventListener("click", handleAnchorClick);
+    };
+  }, [pathname]);
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
@@ -73,6 +105,22 @@ export function AppShell({ children }: AppShellProps) {
 
   return (
     <div className="relative min-h-dvh bg-[var(--bg-base)] text-[var(--text-primary)]">
+      {/* Global Navigation Loading Bar */}
+      <AnimatePresence>
+        {navigating && (
+          <motion.div
+            initial={{ width: "0%", opacity: 1 }}
+            animate={{ width: "90%" }}
+            exit={{ width: "100%", opacity: 0 }}
+            transition={{
+              width: { duration: 2.0, ease: "easeOut" },
+              opacity: { duration: 0.15 }
+            }}
+            className="fixed top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[var(--accent-start)] to-[var(--accent-end)] z-[9999]"
+            style={{ transformOrigin: "left" }}
+          />
+        )}
+      </AnimatePresence>
       {/* Top Header (Mobile & Tablet only) */}
       <TopBar />
 

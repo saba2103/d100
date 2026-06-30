@@ -36,13 +36,15 @@ export default async function WaterPage() {
   const { getProfileQueryTarget } = require("@/lib/profileConnection");
   const target = await getProfileQueryTarget(supabase, user.id);
 
-  const { data: statsData } = await supabase
-    .from("daily_stats")
-    .select("stat_date,water_ml,water_goal_ml")
-    .eq("user_id", target.userId)
-    .eq("profile_tag", target.profileTag)
-    .in("stat_date", dates)
-    .order("stat_date");
+  const [{ data: statsData }, { data: profileData }] = await Promise.all([
+    supabase.from("daily_stats")
+      .select("stat_date,water_ml,water_goal_ml")
+      .eq("user_id", target.userId)
+      .eq("profile_tag", target.profileTag)
+      .in("stat_date", dates)
+      .order("stat_date"),
+    supabase.from("profiles").select("program_start_date").eq("id", target.userId).maybeSingle()
+  ]);
 
   const statsMap = Object.fromEntries((statsData || []).map(r => [r.stat_date, r]));
   const todayStats = statsMap[today];
@@ -51,6 +53,7 @@ export default async function WaterPage() {
     <WaterTrackerClient
       userId={target.userId}
       today={today}
+      programStartDate={profileData?.program_start_date ?? null}
       waterGoal={waterGoal}
       initialWaterMl={todayStats?.water_ml ?? 0}
       initialStatsId={null}

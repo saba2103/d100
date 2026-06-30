@@ -33,13 +33,15 @@ export default async function StepsPage() {
   const target = await getProfileQueryTarget(supabase, user.id);
   const stepsGoal = settingsData?.steps_goal ?? 10000;
 
-  const { data: statsData } = await supabase
-    .from("daily_stats")
-    .select("stat_date,steps,steps_goal")
-    .eq("user_id", target.userId)
-    .eq("profile_tag", target.profileTag)
-    .in("stat_date", dates)
-    .order("stat_date");
+  const [{ data: statsData }, { data: profileData }] = await Promise.all([
+    supabase.from("daily_stats")
+      .select("stat_date,steps,steps_goal")
+      .eq("user_id", target.userId)
+      .eq("profile_tag", target.profileTag)
+      .in("stat_date", dates)
+      .order("stat_date"),
+    supabase.from("profiles").select("program_start_date").eq("id", target.userId).maybeSingle()
+  ]);
 
   const statsMap = Object.fromEntries((statsData || []).map(r => [r.stat_date, r]));
 
@@ -47,6 +49,7 @@ export default async function StepsPage() {
     <StepsTrackerClient
       userId={target.userId}
       today={today}
+      programStartDate={profileData?.program_start_date ?? null}
       stepsGoal={stepsGoal}
       initialSteps={statsMap[today]?.steps ?? 0}
       historyDates={dates}

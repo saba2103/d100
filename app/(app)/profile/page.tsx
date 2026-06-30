@@ -829,18 +829,12 @@ export default function ProfilePage() {
               <div className="pt-4 border-t border-[var(--border)]/40 flex justify-end">
                 <Button
                   variant="primary"
+                  loading={saving}
                   disabled={saving}
                   onClick={handleSaveForm}
                   className="px-6 text-xs font-display font-black uppercase tracking-widest h-11"
                 >
-                  {saving ? (
-                    <div className="flex items-center gap-2">
-                      <CircleNotch size={16} className="animate-spin" />
-                      Saving...
-                    </div>
-                  ) : (
-                    "Save Changes"
-                  )}
+                  Save Changes
                 </Button>
               </div>
             )}
@@ -885,18 +879,12 @@ export default function ProfilePage() {
               <div className="pt-4 border-t border-[var(--border)]/40 flex justify-end">
                 <Button
                   variant="primary"
+                  loading={saving}
                   disabled={saving}
                   onClick={handleSaveForm}
                   className="px-6 text-xs font-display font-black uppercase tracking-widest h-11"
                 >
-                  {saving ? (
-                    <div className="flex items-center gap-2">
-                      <CircleNotch size={16} className="animate-spin" />
-                      Saving...
-                    </div>
-                  ) : (
-                    "Save Changes"
-                  )}
+                  Save Changes
                 </Button>
               </div>
             )}

@@ -183,7 +183,7 @@ export function StoriesBar({ activeProfile, programDay, workoutStreak, profileNa
   const storyGroups: StoryGroup[] = [
     {
       id: "your_progress",
-      title: "you",
+      title: "You",
       avatarText: activeProfile,
       avatarBg: "bg-gradient-to-tr from-[#FF6B00] to-[#FFAA00]",
       avatarUrl: activeProfile === "S" ? sabaAvatar : ancyAvatar,
@@ -194,7 +194,7 @@ export function StoriesBar({ activeProfile, programDay, workoutStreak, profileNa
     },
     {
       id: "partner_progress",
-      title: "partner",
+      title: isPartnerConnected ? (activeProfile === "S" ? "Ancy" : "Saba") : "Partner",
       avatarText: activeProfile === "S" ? "A" : "S",
       avatarBg: "bg-gradient-to-tr from-purple-600 to-pink-500",
       avatarUrl: activeProfile === "S" && isPartnerConnected ? ancyAvatar : activeProfile === "A" && isPartnerConnected ? sabaAvatar : null,

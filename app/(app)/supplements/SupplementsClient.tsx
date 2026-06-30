@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { BottomSheet, Modal } from "@/components/ui/Misc";
 import { cn } from "@/lib/utils/cn";
+import { TimelineCalendar } from "@/components/ui/TimelineCalendar";
 
 // Framer motion imports
 import { motion, AnimatePresence } from "framer-motion";
@@ -22,6 +23,7 @@ import { useAppUser } from "@/lib/contexts/AppContext";
 interface Props {
   userId: string;
   today: string;
+  programStartDate: string | null;
   initialLogs: any[];
   isReadOnly?: boolean;
 }
@@ -39,13 +41,36 @@ import { COACH_SUPPLEMENT_PLAN } from "@/lib/workoutPlan";
 
 const COACH_SUPPLEMENTS: any[] = COACH_SUPPLEMENT_PLAN;
 
-export function SupplementsClient({ userId, today, initialLogs, isReadOnly = false }: Props) {
+export function SupplementsClient({ userId, today, programStartDate, initialLogs, isReadOnly = false }: Props) {
   const router = useRouter();
   const { activeProfile } = useAppUser();
   const [logs, setLogs] = useState(initialLogs);
+  const [selectedDate, setSelectedDate] = useState(today);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [lastCheckedSupp, setLastCheckedSupp] = useState<string | null>(null);
+
+  // Derived log for the selected date
+  const selectedLog = useMemo(() => logs.find(l => l.logged_at === selectedDate), [logs, selectedDate]);
+  // Keep todayLog for streak logic
+  const todayLog = useMemo(() => logs.find(l => l.logged_at === today), [logs, today]);
+
+  const checklist: Supplement[] = useMemo(() => {
+    if (selectedLog) {
+      const items = [...(selectedLog.supplements || [])];
+      COACH_SUPPLEMENTS.forEach(coach => {
+        if (!items.some(i => i.name === coach.name)) {
+          items.push({ name: coach.name, dose: coach.dose, timing: coach.timing, custom: false, taken: false });
+        }
+      });
+      return items;
+    }
+    const prevLog = logs.find(l => l.logged_at !== selectedDate);
+    const prevCustoms = prevLog ? (prevLog.supplements || []).filter((i: any) => i.custom) : [];
+    const initialCustoms = prevCustoms.map((i: any) => ({ name: i.name, dose: i.dose, timing: i.timing || "", custom: true, taken: false }));
+    const initialCoach = COACH_SUPPLEMENTS.map(c => ({ name: c.name, dose: c.dose, timing: c.timing, custom: false, taken: false }));
+    return [...initialCoach, ...initialCustoms];
+  }, [selectedLog, logs, selectedDate]);
 
   // Form state for custom supplement
   const [customName, setCustomName] = useState("");
@@ -57,52 +82,6 @@ export function SupplementsClient({ userId, today, initialLogs, isReadOnly = fal
   // Mobile sheet vs Desktop Modal helper
   const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
   const ContainerComponent = isMobile ? BottomSheet : Modal;
-
-  // 1. Get today's checklist
-  const todayLog = useMemo(() => logs.find(l => l.logged_at === today), [logs, today]);
-
-  const checklist: Supplement[] = useMemo(() => {
-    if (todayLog) {
-      // Ensure all coach supplements are present
-      const items = [...(todayLog.supplements || [])];
-      COACH_SUPPLEMENTS.forEach(coach => {
-        if (!items.some(i => i.name === coach.name)) {
-          items.push({
-            name: coach.name,
-            dose: coach.dose,
-            timing: coach.timing,
-            custom: false,
-            taken: false,
-          });
-        }
-      });
-      return items;
-    }
-
-    // Carry forward customs from the most recent log
-    const prevLog = logs.find(l => l.logged_at !== today);
-    const prevCustoms = prevLog
-      ? (prevLog.supplements || []).filter((i: any) => i.custom)
-      : [];
-
-    const initialCustoms = prevCustoms.map((i: any) => ({
-      name: i.name,
-      dose: i.dose,
-      timing: i.timing || "",
-      custom: true,
-      taken: false,
-    }));
-
-    const initialCoach = COACH_SUPPLEMENTS.map(c => ({
-      name: c.name,
-      dose: c.dose,
-      timing: c.timing,
-      custom: false,
-      taken: false,
-    }));
-
-    return [...initialCoach, ...initialCustoms];
-  }, [todayLog, logs, today]);
 
   const totalCount = checklist.length;
   const takenCount = checklist.filter(i => i.taken).length;
@@ -119,34 +98,25 @@ export function SupplementsClient({ userId, today, initialLogs, isReadOnly = fal
     const updated = checklist.map(item => {
       if (item.name === name) {
         const nextTaken = !item.taken;
-        return {
-          ...item,
-          taken: nextTaken,
-          taken_at: nextTaken ? new Date().toISOString() : undefined,
-        };
+        return { ...item, taken: nextTaken, taken_at: nextTaken ? new Date().toISOString() : undefined };
       }
       return item;
     });
 
     const supabase = createClient();
-    if (todayLog) {
+    if (selectedLog) {
       const { error } = await supabase
         .from("supplement_logs")
         .update({ supplements: updated })
-        .eq("id", todayLog.id);
+        .eq("id", selectedLog.id);
       if (!error) {
-        setLogs(prev => prev.map(l => l.id === todayLog.id ? { ...l, supplements: updated } : l));
+        setLogs(prev => prev.map(l => l.id === selectedLog.id ? { ...l, supplements: updated } : l));
       }
     } else {
       const { data, error } = await supabase
         .from("supplement_logs")
-        .insert({
-          user_id: userId,
-          logged_at: today,
-          supplements: updated,
-        })
-        .select()
-        .single();
+        .insert({ user_id: userId, logged_at: selectedDate, supplements: updated })
+        .select().single();
       if (!error && data) {
         setLogs(prev => [data, ...prev]);
       }
@@ -313,7 +283,7 @@ export function SupplementsClient({ userId, today, initialLogs, isReadOnly = fal
   }, [checklist, logs]);
 
   const formattedDate = (() => {
-    const [y, m, d] = today.split("-").map(Number);
+    const [y, m, d] = selectedDate.split("-").map(Number);
     return new Date(y, m - 1, d).toLocaleDateString("en-US", {
       weekday: "short", month: "short", day: "numeric",
     });
@@ -334,6 +304,15 @@ export function SupplementsClient({ userId, today, initialLogs, isReadOnly = fal
           <Gear size={18} />
         </button>
       </div>
+
+      {/* Timeline Calendar */}
+      <TimelineCalendar
+        selectedDate={selectedDate}
+        today={today}
+        programStartDate={programStartDate}
+        onSelectDate={setSelectedDate}
+        hasDataOnDate={(d) => logs.some(l => l.logged_at === d && l.supplements?.some((s: any) => s.taken))}
+      />
 
       {/* Streak and compliance widgets */}
       <div className="grid grid-cols-2 gap-3">

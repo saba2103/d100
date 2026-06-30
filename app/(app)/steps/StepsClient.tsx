@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useAppUser } from "@/lib/contexts/AppContext";
@@ -14,10 +14,12 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils/cn";
 import { CountUp } from "@/components/ui/CountUp";
+import { TimelineCalendar } from "@/components/ui/TimelineCalendar";
 
 interface Props {
   userId: string;
   today: string;
+  programStartDate: string | null;
   stepsGoal: number;
   initialSteps: number;
   historyDates: string[];
@@ -70,13 +72,42 @@ function StepsRing({ steps, goal }: { steps: number; goal: number }) {
 }
 
 export function StepsTrackerClient({
-  userId, today, stepsGoal, initialSteps, historyDates, historyStats, isReadOnly = false,
+  userId, today, programStartDate, stepsGoal, initialSteps, historyDates, historyStats, isReadOnly = false,
 }: Props) {
   const router = useRouter();
   const { activeProfile } = useAppUser();
+  const [selectedDate, setSelectedDate] = useState(today);
+  const [historyStepsData, setHistoryStepsData] = useState<Record<string, number>>({});
   const [steps, setSteps] = useState(initialSteps);
   const [input, setInput] = useState(initialSteps > 0 ? String(initialSteps) : "");
   const [saving, setSaving] = useState(false);
+
+  // Fetch all step history on mount
+  useEffect(() => {
+    const fetch = async () => {
+      if (!activeProfile) return;
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("daily_stats")
+        .select("stat_date,steps")
+        .eq("user_id", userId)
+        .eq("profile_tag", activeProfile);
+      if (data) {
+        const map: Record<string, number> = {};
+        data.forEach((r) => { map[r.stat_date] = r.steps ?? 0; });
+        map[today] = map[today] ?? initialSteps;
+        setHistoryStepsData(map);
+      }
+    };
+    fetch();
+  }, [userId, activeProfile, today, initialSteps]);
+
+  // Sync steps/input when date changes
+  useEffect(() => {
+    const val = historyStepsData[selectedDate] ?? (selectedDate === today ? initialSteps : 0);
+    setSteps(val);
+    setInput(val > 0 ? String(val) : "");
+  }, [selectedDate, historyStepsData, today, initialSteps]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,11 +116,12 @@ export function StepsTrackerClient({
     const val = Number(input) || 0;
     const supabase = createClient();
     await supabase.from("daily_stats").upsert(
-      { user_id: userId, stat_date: today, steps: val, steps_goal: stepsGoal, profile_tag: activeProfile },
+      { user_id: userId, stat_date: selectedDate, steps: val, steps_goal: stepsGoal, profile_tag: activeProfile },
       { onConflict: "user_id,stat_date,profile_tag" }
     );
     await triggerBadgeCheck();
     setSteps(val);
+    setHistoryStepsData((prev) => ({ ...prev, [selectedDate]: val }));
     setSaving(false);
   };
 
@@ -107,7 +139,7 @@ export function StepsTrackerClient({
   });
 
   const formattedDate = (() => {
-    const [y, m, d] = today.split("-").map(Number);
+    const [y, m, d] = selectedDate.split("-").map(Number);
     return new Date(y, m - 1, d).toLocaleDateString("en-US", {
       weekday: "short", month: "short", day: "numeric",
     });
@@ -132,6 +164,15 @@ export function StepsTrackerClient({
           <Gear size={18} />
         </button>
       </div>
+
+      {/* Timeline Calendar */}
+      <TimelineCalendar
+        selectedDate={selectedDate}
+        today={today}
+        programStartDate={programStartDate}
+        onSelectDate={setSelectedDate}
+        hasDataOnDate={(d) => (historyStepsData[d] ?? 0) > 0}
+      />
 
       {/* Ring card */}
       <Card variant="surface" className="p-6 flex flex-col items-center gap-4">

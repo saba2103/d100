@@ -17,14 +17,14 @@ export default async function CaloriesPage() {
 
   const today = getTodayStr();
 
-  const { data: settingsData } = await supabase
-    .from("user_settings")
-    .select("calories_goal")
-    .eq("user_id", user.id)
-    .single();
-
   const { getProfileQueryTarget } = require("@/lib/profileConnection");
   const target = await getProfileQueryTarget(supabase, user.id);
+
+  const [{ data: settingsData }, { data: profileData }] = await Promise.all([
+    supabase.from("user_settings").select("calories_goal").eq("user_id", user.id).maybeSingle(),
+    supabase.from("profiles").select("program_start_date").eq("id", target.userId).maybeSingle()
+  ]);
+
   const caloriesGoal = settingsData?.calories_goal ?? 2000;
 
   const [statsRes, nutritionLogsRes, bodyRes] = await Promise.all([
@@ -46,6 +46,7 @@ export default async function CaloriesPage() {
     <CaloriesTrackerClient
       userId={target.userId}
       today={today}
+      programStartDate={profileData?.program_start_date ?? null}
       caloriesGoal={caloriesGoal}
       consumed={consumed}
       initialBurned={statsRes.data?.calories_burned ?? 0}

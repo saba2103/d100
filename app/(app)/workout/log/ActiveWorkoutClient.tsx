@@ -92,6 +92,7 @@ export function ActiveWorkoutClient({
   const [newExerciseName, setNewExerciseName] = useState("");
 
   // Warm-up and Cool-down checked states
+  const [saving, setSaving] = useState(false);
   const [completedWarmUp, setCompletedWarmUp] = useState<boolean[]>(() => {
     if (isEditing && currentWorkout?.notes) {
       try {
@@ -312,6 +313,7 @@ export function ActiveWorkoutClient({
 
   // Submit Workout Log
   const handleFinishWorkout = async () => {
+    setSaving(true);
     const supabase = createClient();
 
     // Map rows to database models, skipping incomplete sets if empty
@@ -379,6 +381,7 @@ export function ActiveWorkoutClient({
       router.push("/workout");
       router.refresh();
     } else {
+      setSaving(false);
       alert("Failed to save workout: " + dbRes.error.message);
     }
   };
@@ -456,6 +459,8 @@ export function ActiveWorkoutClient({
             size="sm"
             variant="primary"
             onClick={handleFinishWorkout}
+            loading={saving}
+            disabled={saving}
           >
             Finish
           </Button>
@@ -562,7 +567,7 @@ export function ActiveWorkoutClient({
                   <>
                     <div className="grid grid-cols-12 gap-3 text-[10px] font-body font-body-bold text-[var(--text-muted)] uppercase tracking-wider px-2">
                       <span className="col-span-2 text-center">Set</span>
-                      <span className="col-span-3">{isPlank ? "Secs" : "Mins"}</span>
+                      <span className="col-span-3">{isPlank ? "Secs" : isCardio ? "Mins" : "Reps"}</span>
                       <span className="col-span-4">{isPlank ? "Secs" : isCardio ? "Mins" : "Weight (kg)"}</span>
                       <span className="col-span-3 text-center">Done</span>
                     </div>

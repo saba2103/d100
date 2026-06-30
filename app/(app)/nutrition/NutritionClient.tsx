@@ -14,6 +14,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { BottomSheet, Modal } from "@/components/ui/Misc";
+import { TimelineCalendar } from "@/components/ui/TimelineCalendar";
 
 // ── Types ──────────────────────────────────────────────────────────────
 type MealType = "breakfast" | "lunch" | "dinner" | "snack" | "pre_workout" | "post_workout";
@@ -99,12 +100,11 @@ function AddFoodForm({
   const [qty, setQty] = useState("1");
   const [unit, setUnit] = useState("serving");
   const [saving, setSaving] = useState(false);
-
+  const [aiSuccess, setAiSuccess] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [foodImage, setFoodImage] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
-  const [aiSuccess, setAiSuccess] = useState(false);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -151,6 +151,38 @@ function AddFoodForm({
       setAiSuccess(true);
     } catch (err: any) {
       setAiError(err.message || "Could not detect food. Please enter manually.");
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
+  const analyzeByText = async () => {
+    const query = name.trim();
+    if (!query) {
+      setAiError("Please enter a food name or description first.");
+      return;
+    }
+    setAnalyzing(true);
+    setAiError(null);
+    setAiSuccess(false);
+    try {
+      const res = await fetch("/api/nutrition/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: `${query}${qty ? `, ${qty} ${unit}` : ""}` }),
+      });
+      const json = await res.json();
+      if (!res.ok || json.error) throw new Error(json.error || "Failed to detect food");
+      const data = json.data;
+      if (data.calories != null) setCalories(String(data.calories));
+      if (data.protein_g != null) setProtein(String(data.protein_g));
+      if (data.carbs_g != null) setCarbs(String(data.carbs_g));
+      if (data.fat_g != null) setFat(String(data.fat_g));
+      if (data.quantity != null && !qty) setQty(String(data.quantity));
+      if (data.unit && unit === "serving") setUnit(data.unit);
+      setAiSuccess(true);
+    } catch (err: any) {
+      setAiError(err.message || "Could not detect macros. Please enter manually.");
     } finally {
       setAnalyzing(false);
     }
@@ -292,9 +324,19 @@ function AddFoodForm({
         ))}
       </div>
 
-      <Input label="Food Name" id="food-name" type="text"
-        placeholder="e.g. Oats, Chicken Breast" value={name}
-        onChange={(e) => setName(e.target.value)} required />
+      {/* Food Name — tall textarea */}
+      <div className="space-y-1.5">
+        <label htmlFor="food-name" className="font-body text-[10px] font-body-bold uppercase tracking-widest text-[var(--text-muted)]">Food Name</label>
+        <textarea
+          id="food-name"
+          rows={3}
+          placeholder="e.g. 2 rotis with dal, salad and a glass of milk — describe in detail for better AI detection"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          required
+          className="w-full bg-[var(--bg-elevated)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] font-body text-sm rounded-xl px-3.5 py-3 resize-none outline-none focus:ring-2 focus:ring-[var(--accent-start)] transition-all"
+        />
+      </div>
 
       <div className="grid grid-cols-2 gap-3">
         <Input label="Quantity" id="food-qty" type="text"
@@ -304,6 +346,26 @@ function AddFoodForm({
           placeholder="cup / g / serving" value={unit}
           onChange={(e) => setUnit(e.target.value)} />
       </div>
+
+      {/* Detect with AI button */}
+      <button
+        type="button"
+        onClick={analyzeByText}
+        disabled={analyzing || !name.trim()}
+        className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-[var(--accent-start)]/10 hover:bg-[var(--accent-start)]/20 text-[var(--accent-text)] font-body font-body-bold text-xs transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        {analyzing ? (
+          <>
+            <CircleNotch size={14} className="animate-spin" />
+            Detecting macros…
+          </>
+        ) : (
+          <>
+            <Sparkle size={14} weight="fill" />
+            Detect Macros with AI
+          </>
+        )}
+      </button>
 
       <Input label="Calories (kcal)" id="food-cal" type="number"
         inputMode="numeric" placeholder="300" value={calories}
@@ -491,6 +553,43 @@ export function NutritionClient({ profile, settings, initialLogs, initialDailySt
 
   // Logs keyed by meal type
   const [logs, setLogs] = useState<NutritionLog[]>(initialLogs);
+  const [historyLogsDates, setHistoryLogsDates] = useState<Set<string>>(new Set());
+
+  // Load history dates on mount
+  useEffect(() => {
+    const fetchHistoryDates = async () => {
+      if (!activeProfile) return;
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("nutrition_logs")
+        .select("logged_at")
+        .eq("user_id", profile.id)
+        .eq("profile_tag", activeProfile);
+      if (data) {
+        const dates = new Set(data.map((row) => row.logged_at));
+        setHistoryLogsDates(dates);
+      }
+    };
+    fetchHistoryDates();
+  }, [activeProfile, profile.id]);
+
+  // Load logs when selectedDate changes
+  useEffect(() => {
+    const fetchLogsForDate = async () => {
+      if (!activeProfile) return;
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("nutrition_logs")
+        .select("*")
+        .eq("user_id", profile.id)
+        .eq("profile_tag", activeProfile)
+        .eq("logged_at", selectedDate);
+      if (!error && data) {
+        setLogs(data as unknown as NutritionLog[]);
+      }
+    };
+    fetchLogsForDate();
+  }, [selectedDate, activeProfile, profile.id]);
 
   // Add food sheet state
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -558,6 +657,11 @@ export function NutritionClient({ profile, settings, initialLogs, initialDailySt
 
     setLogs(updatedLogs);
     setSheetOpen(false);
+    setHistoryLogsDates((prev) => {
+      const next = new Set(prev);
+      next.add(selectedDate);
+      return next;
+    });
 
     // Sync daily_stats.calories_consumed
     const newTotal = updatedLogs.flatMap((l) => l.items)
@@ -605,6 +709,14 @@ export function NutritionClient({ profile, settings, initialLogs, initialDailySt
       l.id === existing.id ? { ...l, items: newItems } : l
     );
     setLogs(updatedLogs);
+    const hasRemainingFood = updatedLogs.some((l) => l.items.length > 0);
+    if (!hasRemainingFood) {
+      setHistoryLogsDates((prev) => {
+        const next = new Set(prev);
+        next.delete(selectedDate);
+        return next;
+      });
+    }
 
     // Sync calories
     const newTotal = updatedLogs.flatMap((l) => l.items)
@@ -638,16 +750,19 @@ export function NutritionClient({ profile, settings, initialLogs, initialDailySt
             NUTRITION
           </h1>
           <p className="font-body text-xs text-[var(--text-muted)] mt-1">
-            Fuel your transformation
+            {formattedDate}
           </p>
         </div>
-        {/* Date selector */}
-        <div className="flex items-center gap-2 bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl px-3 py-2">
-          <span className="font-body text-xs text-[var(--text-primary)] font-body-bold">
-            {formattedDate}
-          </span>
-        </div>
       </div>
+
+      {/* Timeline Calendar */}
+      <TimelineCalendar
+        selectedDate={selectedDate}
+        today={today}
+        programStartDate={profile?.program_start_date}
+        onSelectDate={setSelectedDate}
+        hasDataOnDate={(d) => historyLogsDates.has(d)}
+      />
 
       {/* ── Macro Summary Ring ── */}
       <Card variant="surface" className="p-5">

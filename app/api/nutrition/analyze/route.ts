@@ -4,30 +4,51 @@ const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || "";
 
 export async function POST(req: Request) {
   try {
-    const { image } = await req.json();
+    const { image, text } = await req.json();
 
-    if (!image) {
-      return NextResponse.json({ error: "Please provide a food image." }, { status: 400 });
+    if (!image && !text) {
+      return NextResponse.json({ error: "Please provide a food image or description." }, { status: 400 });
     }
 
-    const match = image.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/);
-    const mediaType = match ? match[1] : "image/png";
-    const base64Data = match ? match[2] : image;
-
-    const systemPrompt = `You are an expert nutritional AI assistant. Analyze the food image provided and estimate the nutritional composition.
-Identify the food item(s) on the plate, estimate serving size, total calories (kcal), protein (g), carbs (g), and fat (g).
+    const systemPrompt = `You are an expert nutritional AI assistant. Analyze the food provided and estimate the nutritional composition.
+Identify the food item(s), estimate serving size, total calories (kcal), protein (g), carbs (g), and fat (g).
 
 Return ONLY raw JSON with no markdown formatting, no backticks, and no explanation text.
 Use the following exact JSON schema:
 {
-  "name": string, // e.g. "Grilled Chicken Breast with Brown Rice & Broccoli"
-  "quantity": 1,
-  "unit": "plate" | "serving" | "bowl" | "piece",
-  "calories": number, // estimated total kcal
+  "name": string,
+  "quantity": number,
+  "unit": "plate" | "serving" | "bowl" | "piece" | "g" | "ml",
+  "calories": number,
   "protein_g": number,
   "carbs_g": number,
   "fat_g": number
 }`;
+
+    // Build user message content
+    let userContent: any[];
+    if (image) {
+      const match = image.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/);
+      const mediaType = match ? match[1] : "image/png";
+      const base64Data = match ? match[2] : image;
+      userContent = [
+        {
+          type: "image",
+          source: { type: "base64", media_type: mediaType, data: base64Data },
+        },
+        {
+          type: "text",
+          text: "Identify the food in this image and estimate its calories, protein, carbs, and fat in JSON format.",
+        },
+      ];
+    } else {
+      userContent = [
+        {
+          type: "text",
+          text: `Estimate the nutritional macros for the following food description and return as JSON:\n\n"${text}"`,
+        },
+      ];
+    }
 
     const candidateModels = ["claude-sonnet-4-6", "claude-3-5-sonnet-latest", "claude-3-haiku-20240307"];
     let parsedData: any = null;
@@ -46,25 +67,7 @@ Use the following exact JSON schema:
             model: modelName,
             max_tokens: 600,
             system: systemPrompt,
-            messages: [
-              {
-                role: "user",
-                content: [
-                  {
-                    type: "image",
-                    source: {
-                      type: "base64",
-                      media_type: mediaType,
-                      data: base64Data,
-                    },
-                  },
-                  {
-                    type: "text",
-                    text: "Identify the food in this image and estimate its calories, protein, carbs, and fat in JSON format.",
-                  },
-                ],
-              },
-            ],
+            messages: [{ role: "user", content: userContent }],
             temperature: 0.2,
           }),
         });
@@ -98,6 +101,6 @@ Use the following exact JSON schema:
     return NextResponse.json({ success: true, data: parsedData });
   } catch (error: any) {
     console.error("Food Analyze API Error:", error);
-    return NextResponse.json({ error: error?.message || "Failed to analyze food photo." }, { status: 500 });
+    return NextResponse.json({ error: error?.message || "Failed to analyze food." }, { status: 500 });
   }
 }

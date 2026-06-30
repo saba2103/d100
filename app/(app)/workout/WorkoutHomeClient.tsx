@@ -95,6 +95,10 @@ export function WorkoutHomeClient({
     (w) => w.logged_at === selectedDate
   );
 
+  const historyLogs = useMemo(() => {
+    return initialWorkouts.filter((w) => w.logged_at !== selectedDate);
+  }, [initialWorkouts, selectedDate]);
+
   // Check if workout is logged on specific date
   const hasWorkoutOnDate = (dateStr: string) => {
     return initialWorkouts.some((w) => w.logged_at === dateStr);
@@ -480,9 +484,9 @@ export function WorkoutHomeClient({
           Recent History
         </h2>
 
-        {initialWorkouts.length > 0 ? (
+        {historyLogs.length > 0 ? (
           <div className="space-y-3">
-            {initialWorkouts.slice(0, 5).map((log) => {
+            {historyLogs.slice(0, 5).map((log) => {
               const formattedDate = new Date(log.logged_at).toLocaleDateString(
                 "en-US",
                 { weekday: "short", month: "short", day: "numeric" }

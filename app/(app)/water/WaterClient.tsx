@@ -13,12 +13,14 @@ import {
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils/cn";
+import { TimelineCalendar } from "@/components/ui/TimelineCalendar";
 
 const QUICK_AMOUNTS = [250, 500, 750, 1000];
 
 interface Props {
   userId: string;
   today: string;
+  programStartDate: string | null;
   waterGoal: number;
   initialWaterMl: number;
   initialStatsId: string | null;
@@ -61,7 +63,7 @@ function WaterBottle({ pct }: { pct: number }) {
         <motion.path
           fill="url(#waterGrad)"
           opacity="0.85"
-          initial={{ y: 210 }}
+          initial={{ y: 210, d: "M12 2 Q31 -4 50 2 Q69 8 88 2 L88 220 L12 220 Z" }}
           animate={{
             y: fillY * 2.1,
             d: [
@@ -79,7 +81,7 @@ function WaterBottle({ pct }: { pct: number }) {
         {/* Ripple wave overlay */}
         <motion.path
           fill="none" stroke="#60B8FF" strokeWidth="2" opacity="0.5"
-          initial={{ y: 210 }}
+          initial={{ y: 210, d: "M12 2 Q31 -4 50 2 Q69 8 88 2" }}
           animate={{
             y: fillY * 2.1,
             d: [
@@ -108,16 +110,47 @@ function WaterBottle({ pct }: { pct: number }) {
 }
 
 export function WaterTrackerClient({
-  userId, today, waterGoal, initialWaterMl, historyDates, historyStats, isReadOnly = false,
+  userId, today, programStartDate, waterGoal, initialWaterMl, historyDates, historyStats, isReadOnly = false,
 }: Props) {
   const router = useRouter();
   const { activeProfile } = useAppUser();
+  const [selectedDate, setSelectedDate] = useState(today);
   const [waterMl, setWaterMl] = useState(initialWaterMl);
+  const [historyWaterData, setHistoryWaterData] = useState<Record<string, number>>({});
   const [customAmt, setCustomAmt] = useState("");
   const [saving, setSaving] = useState(false);
   const [logMode, setLogMode] = useState<"add" | "reduce">("add");
   const [isEditing, setIsEditing] = useState(false);
   const [editVal, setEditVal] = useState("");
+
+  // Load all history water data on mount
+  useEffect(() => {
+    const fetchHistory = async () => {
+      if (!activeProfile) return;
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("daily_stats")
+        .select("stat_date,water_ml")
+        .eq("user_id", userId)
+        .eq("profile_tag", activeProfile);
+      if (data) {
+        const map: Record<string, number> = {};
+        data.forEach((r) => { map[r.stat_date] = r.water_ml ?? 0; });
+        map[today] = map[today] ?? initialWaterMl;
+        setHistoryWaterData(map);
+      }
+    };
+    fetchHistory();
+  }, [userId, activeProfile, today, initialWaterMl]);
+
+  // Update waterMl when date changes
+  useEffect(() => {
+    if (selectedDate === today) {
+      setWaterMl(historyWaterData[today] ?? initialWaterMl);
+    } else {
+      setWaterMl(historyWaterData[selectedDate] ?? 0);
+    }
+  }, [selectedDate, historyWaterData, today, initialWaterMl]);
 
   const pct = Math.min((waterMl / waterGoal) * 100, 100);
   const remaining = Math.max(waterGoal - waterMl, 0);
@@ -129,7 +162,7 @@ export function WaterTrackerClient({
     setSaving(true);
     const supabase = createClient();
     await supabase.from("daily_stats").upsert(
-      { user_id: userId, stat_date: today, water_ml: newMl, water_goal_ml: waterGoal, profile_tag: activeProfile },
+      { user_id: userId, stat_date: selectedDate, water_ml: newMl, water_goal_ml: waterGoal, profile_tag: activeProfile },
       { onConflict: "user_id,stat_date,profile_tag" }
     );
     if (newMl >= waterGoal && waterMl < waterGoal) {
@@ -199,7 +232,7 @@ export function WaterTrackerClient({
   });
 
   const formattedDate = (() => {
-    const [y, m, d] = today.split("-").map(Number);
+    const [y, m, d] = selectedDate.split("-").map(Number);
     return new Date(y, m - 1, d).toLocaleDateString("en-US", {
       weekday: "short", month: "short", day: "numeric",
     });
@@ -223,6 +256,18 @@ export function WaterTrackerClient({
         </button>
       </div>
 
+      {/* Timeline Calendar */}
+      <TimelineCalendar
+        selectedDate={selectedDate}
+        today={today}
+        programStartDate={programStartDate}
+        onSelectDate={(d) => {
+          setSelectedDate(d);
+          setWaterMl(historyWaterData[d] ?? (d === today ? initialWaterMl : 0));
+        }}
+        hasDataOnDate={(d) => (historyWaterData[d] ?? 0) > 0}
+      />
+
       {/* Main visual card */}
       <Card variant="surface" className="p-6">
         <div className="flex flex-col items-center gap-6">
@@ -244,10 +289,17 @@ export function WaterTrackerClient({
                   />
                   <button
                     type="submit"
-                    className="p-2 rounded-xl bg-[#2196F3] text-white hover:bg-[#60B8FF] transition-colors"
+                    className={cn(
+                      "p-2 rounded-xl bg-[#2196F3] text-white hover:bg-[#60B8FF] transition-colors",
+                      saving && "opacity-50 pointer-events-none"
+                    )}
                     disabled={saving}
                   >
-                    <Check size={16} weight="bold" />
+                    {saving ? (
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent block" />
+                    ) : (
+                      <Check size={16} weight="bold" />
+                    )}
                   </button>
                   <button
                     type="button"
@@ -391,6 +443,7 @@ export function WaterTrackerClient({
               type="submit"
               size="sm"
               variant={logMode === "add" ? "primary" : "danger"}
+              loading={saving}
               disabled={saving || !customAmt}
             >
               {logMode === "add" ? "Add" : "Reduce"}

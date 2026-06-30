@@ -1,12 +1,13 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Check, ArrowUp, ArrowDown, ArrowRight, TrendUp } from "@phosphor-icons/react";
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils/cn";
+import { TimelineCalendar } from "@/components/ui/TimelineCalendar";
 
 interface Measurement {
   id: string;
@@ -61,6 +62,8 @@ interface Measurement {
 
 interface Props {
   userId: string;
+  today: string;
+  programStartDate: string | null;
   measurements: Measurement[];
 }
 
@@ -118,9 +121,20 @@ function StatPill({ label, value, unit, flag }: {
   );
 }
 
-export function BodyStatsClient({ userId, measurements }: Props) {
+export function BodyStatsClient({ userId, today, programStartDate, measurements }: Props) {
   const router = useRouter();
+  const [selectedDate, setSelectedDate] = useState(today);
+
+  // Sorted measurements indexed by date for quick lookup
+  const measurementsByDate = React.useMemo(() => {
+    const map: Record<string, Measurement> = {};
+    measurements.forEach((m) => { map[m.measured_at] = m; });
+    return map;
+  }, [measurements]);
+
   const latest = measurements[0];
+  const selectedMeasurement = measurementsByDate[selectedDate] ?? (selectedDate === today ? latest : null);
+  const displayMeasurement = selectedMeasurement;
 
   return (
     <div className="pb-28 pt-4 px-4 max-w-2xl mx-auto space-y-5">
@@ -142,23 +156,33 @@ export function BodyStatsClient({ userId, measurements }: Props) {
             <TrendUp size={20} weight="bold" />
           </button>
 
-          <Button size="sm" variant="primary" onClick={() => router.push("/body-stats/log")}>
-            <Plus size={16} weight="bold" /> Log Today
+          <Button size="sm" variant="primary" onClick={() => router.push(`/body-stats/log${selectedDate !== today ? `?date=${selectedDate}` : ``}`)}
+          >
+            <Plus size={16} weight="bold" /> Log
           </Button>
         </div>
       </div>
 
+      {/* Timeline Calendar */}
+      <TimelineCalendar
+        selectedDate={selectedDate}
+        today={today}
+        programStartDate={programStartDate}
+        onSelectDate={setSelectedDate}
+        hasDataOnDate={(d) => !!measurementsByDate[d]}
+      />
+
       {/* Current Stats card */}
-      {latest ? (
+      {displayMeasurement ? (
         <Card variant="surface" className="p-5 space-y-4 border-[#27272a]">
           <div className="flex items-center justify-between">
             <div>
               <p className="font-body text-xs text-[var(--text-muted)] uppercase tracking-wider">
-                Latest Measurement
+                {selectedDate === today ? "Latest Measurement" : "Measurement"}
               </p>
               <p className="font-body-bold text-sm text-[var(--text-primary)] mt-0.5">
                 {(() => {
-                  const [y, m, d] = latest.measured_at.split("-").map(Number);
+                  const [y, m, d] = displayMeasurement.measured_at.split("-").map(Number);
                   return new Date(y, m - 1, d).toLocaleDateString("en-US", {
                     weekday: "short", month: "long", day: "numeric", year: "numeric",
                   });
@@ -167,11 +191,11 @@ export function BodyStatsClient({ userId, measurements }: Props) {
             </div>
             <span className={cn(
               "px-2.5 py-1 rounded-full text-[10px] font-body-bold border border-[#27272a]",
-              latest.source === "cult_scale"
+              displayMeasurement.source === "cult_scale"
                 ? "text-[var(--accent-text)] bg-[rgba(249,115,22,0.12)]"
                 : "text-[var(--text-muted)] bg-[#18181b]"
             )}>
-              {latest.source === "cult_scale" ? "⚖️ Cult Scale" : "✏️ Manual"}
+              {displayMeasurement.source === "cult_scale" ? "⚖️ Cult Scale" : "✏️ Manual"}
             </span>
           </div>
 
@@ -179,16 +203,16 @@ export function BodyStatsClient({ userId, measurements }: Props) {
           <div className="space-y-1.5">
             <p className="font-body-bold text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Essentials</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-              <StatPill label="Weight" value={latest.weight_kg} unit="kg" flag={latest.flags?.weight} />
-              <StatPill label="Std Weight" value={latest.standard_weight_kg} unit="kg" />
-              <StatPill label="BMI" value={latest.bmi} flag={latest.flags?.bmi} />
-              <StatPill label="Body Fat" value={latest.body_fat_pct} unit="%" flag={latest.flags?.body_fat} />
-              <StatPill label="Lean Mass" value={latest.lean_mass_kg} unit="kg" flag={latest.flags?.lean_mass} />
-              <StatPill label="Bone Mass" value={latest.bone_mass_kg} unit="kg" flag={latest.flags?.bone_mass} />
-              <StatPill label="Heart Rate" value={latest.heart_rate_bpm} unit="bpm" />
-              <StatPill label="Health Score" value={latest.health_score} unit="/100" />
-              <StatPill label="Total Water" value={latest.total_body_water_kg} unit="kg" />
-              <StatPill label="Wt Control" value={latest.weight_control_kg} unit="kg" />
+              <StatPill label="Weight" value={displayMeasurement.weight_kg} unit="kg" flag={displayMeasurement.flags?.weight} />
+              <StatPill label="Std Weight" value={displayMeasurement.standard_weight_kg} unit="kg" />
+              <StatPill label="BMI" value={displayMeasurement.bmi} flag={displayMeasurement.flags?.bmi} />
+              <StatPill label="Body Fat" value={displayMeasurement.body_fat_pct} unit="%" flag={displayMeasurement.flags?.body_fat} />
+              <StatPill label="Lean Mass" value={displayMeasurement.lean_mass_kg} unit="kg" flag={displayMeasurement.flags?.lean_mass} />
+              <StatPill label="Bone Mass" value={displayMeasurement.bone_mass_kg} unit="kg" flag={displayMeasurement.flags?.bone_mass} />
+              <StatPill label="Heart Rate" value={displayMeasurement.heart_rate_bpm} unit="bpm" />
+              <StatPill label="Health Score" value={displayMeasurement.health_score} unit="/100" />
+              <StatPill label="Total Water" value={displayMeasurement.total_body_water_kg} unit="kg" />
+              <StatPill label="Wt Control" value={displayMeasurement.weight_control_kg} unit="kg" />
             </div>
           </div>
 
@@ -196,8 +220,8 @@ export function BodyStatsClient({ userId, measurements }: Props) {
           <div className="space-y-1.5">
             <p className="font-body-bold text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Bone &amp; Muscle</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-              <StatPill label="Muscle Mass" value={latest.skeletal_muscle_mass_kg} unit="kg" flag={latest.flags?.skeletal_muscle} />
-              <StatPill label="Muscle %" value={latest.skeletal_muscle_pct} unit="%" />
+              <StatPill label="Muscle Mass" value={displayMeasurement.skeletal_muscle_mass_kg} unit="kg" flag={displayMeasurement.flags?.skeletal_muscle} />
+              <StatPill label="Muscle %" value={displayMeasurement.skeletal_muscle_pct} unit="%" />
             </div>
           </div>
 
@@ -205,14 +229,14 @@ export function BodyStatsClient({ userId, measurements }: Props) {
           <div className="space-y-1.5">
             <p className="font-body-bold text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Fat &amp; Composition</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-              <StatPill label="Subcut Fat" value={latest.subcutaneous_fat_pct} unit="%" flag={latest.flags?.subcutaneous_fat} />
-              <StatPill label="Subcut Fat" value={latest.subcutaneous_fat_kg} unit="kg" />
-              <StatPill label="Visceral Fat" value={latest.visceral_fat_level} flag={latest.flags?.visceral_fat} />
-              <StatPill label="Trunk Fat" value={latest.trunk_fat_mass_kg} unit="kg" />
-              <StatPill label="Trunk Fat " value={latest.trunk_fat_ratio_pct} unit="%" />
-              <StatPill label="Body Water" value={latest.body_water_pct} unit="%" flag={latest.flags?.body_water} />
-              <StatPill label="Protein" value={latest.protein_pct} unit="%" flag={latest.flags?.protein} />
-              <StatPill label="Rec. Cal" value={latest.recommended_calorie_intake_kcal} unit="kcal" />
+              <StatPill label="Subcut Fat" value={displayMeasurement.subcutaneous_fat_pct} unit="%" flag={displayMeasurement.flags?.subcutaneous_fat} />
+              <StatPill label="Subcut Fat" value={displayMeasurement.subcutaneous_fat_kg} unit="kg" />
+              <StatPill label="Visceral Fat" value={displayMeasurement.visceral_fat_level} flag={displayMeasurement.flags?.visceral_fat} />
+              <StatPill label="Trunk Fat" value={displayMeasurement.trunk_fat_mass_kg} unit="kg" />
+              <StatPill label="Trunk Fat " value={displayMeasurement.trunk_fat_ratio_pct} unit="%" />
+              <StatPill label="Body Water" value={displayMeasurement.body_water_pct} unit="%" flag={displayMeasurement.flags?.body_water} />
+              <StatPill label="Protein" value={displayMeasurement.protein_pct} unit="%" flag={displayMeasurement.flags?.protein} />
+              <StatPill label="Rec. Cal" value={displayMeasurement.recommended_calorie_intake_kcal} unit="kcal" />
             </div>
           </div>
 
@@ -220,8 +244,8 @@ export function BodyStatsClient({ userId, measurements }: Props) {
           <div className="space-y-1.5">
             <p className="font-body-bold text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Metabolic</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-              <StatPill label="BMR" value={latest.bmr_kcal} unit="kcal" flag={latest.flags?.bmr} />
-              <StatPill label="Met. Age" value={latest.metabolic_age} unit="yrs" flag={latest.flags?.metabolic_age} />
+              <StatPill label="BMR" value={displayMeasurement.bmr_kcal} unit="kcal" flag={displayMeasurement.flags?.bmr} />
+              <StatPill label="Met. Age" value={displayMeasurement.metabolic_age} unit="yrs" flag={displayMeasurement.flags?.metabolic_age} />
             </div>
           </div>
 
@@ -229,11 +253,11 @@ export function BodyStatsClient({ userId, measurements }: Props) {
           <div className="space-y-1.5">
             <p className="font-body-bold text-[10px] text-[var(--text-muted)] uppercase tracking-wider">More</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-              <StatPill label="Waist/Hip" value={latest.waist_hip_ratio} />
-              <StatPill label="Intracel. H₂O" value={latest.intracellular_water_kg} unit="kg" />
-              <StatPill label="Extracel. H₂O" value={latest.extracellular_water_kg} unit="kg" />
-              <StatPill label="Protein Mass" value={latest.protein_mass_kg} unit="kg" />
-              <StatPill label="Mineral Mass" value={latest.mineral_mass_kg} unit="kg" />
+              <StatPill label="Waist/Hip" value={displayMeasurement.waist_hip_ratio} />
+              <StatPill label="Intracel. H₂O" value={displayMeasurement.intracellular_water_kg} unit="kg" />
+              <StatPill label="Extracel. H₂O" value={displayMeasurement.extracellular_water_kg} unit="kg" />
+              <StatPill label="Protein Mass" value={displayMeasurement.protein_mass_kg} unit="kg" />
+              <StatPill label="Mineral Mass" value={displayMeasurement.mineral_mass_kg} unit="kg" />
             </div>
           </div>
 
@@ -241,14 +265,14 @@ export function BodyStatsClient({ userId, measurements }: Props) {
           <div className="space-y-1.5">
             <p className="font-body-bold text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Segmental — Arms</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-              <StatPill label="L-Arm Fat %" value={latest.left_arm_fat_ratio_pct} unit="%" />
-              <StatPill label="R-Arm Fat %" value={latest.right_arm_fat_ratio_pct} unit="%" />
-              <StatPill label="L-Arm Fat" value={latest.left_arm_fat_mass_kg} unit="kg" />
-              <StatPill label="R-Arm Fat" value={latest.right_arm_fat_mass_kg} unit="kg" />
-              <StatPill label="L-Arm Muscle %" value={latest.left_arm_muscle_ratio_pct} unit="%" />
-              <StatPill label="R-Arm Muscle %" value={latest.right_arm_muscle_ratio_pct} unit="%" />
-              <StatPill label="L-Arm Muscle" value={latest.left_arm_muscle_mass_kg} unit="kg" />
-              <StatPill label="R-Arm Muscle" value={latest.right_arm_muscle_mass_kg} unit="kg" />
+              <StatPill label="L-Arm Fat %" value={displayMeasurement.left_arm_fat_ratio_pct} unit="%" />
+              <StatPill label="R-Arm Fat %" value={displayMeasurement.right_arm_fat_ratio_pct} unit="%" />
+              <StatPill label="L-Arm Fat" value={displayMeasurement.left_arm_fat_mass_kg} unit="kg" />
+              <StatPill label="R-Arm Fat" value={displayMeasurement.right_arm_fat_mass_kg} unit="kg" />
+              <StatPill label="L-Arm Muscle %" value={displayMeasurement.left_arm_muscle_ratio_pct} unit="%" />
+              <StatPill label="R-Arm Muscle %" value={displayMeasurement.right_arm_muscle_ratio_pct} unit="%" />
+              <StatPill label="L-Arm Muscle" value={displayMeasurement.left_arm_muscle_mass_kg} unit="kg" />
+              <StatPill label="R-Arm Muscle" value={displayMeasurement.right_arm_muscle_mass_kg} unit="kg" />
             </div>
           </div>
 
@@ -256,26 +280,31 @@ export function BodyStatsClient({ userId, measurements }: Props) {
           <div className="space-y-1.5">
             <p className="font-body-bold text-[10px] text-[var(--text-muted)] uppercase tracking-wider">Segmental — Legs</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-              <StatPill label="L-Leg Fat %" value={latest.left_leg_fat_ratio_pct} unit="%" />
-              <StatPill label="R-Leg Fat %" value={latest.right_leg_fat_ratio_pct} unit="%" />
-              <StatPill label="L-Leg Fat" value={latest.left_leg_fat_mass_kg} unit="kg" />
-              <StatPill label="R-Leg Fat" value={latest.right_leg_fat_mass_kg} unit="kg" />
-              <StatPill label="L-Leg Muscle %" value={latest.left_leg_muscle_ratio_pct} unit="%" />
-              <StatPill label="R-Leg Muscle %" value={latest.right_leg_muscle_ratio_pct} unit="%" />
-              <StatPill label="L-Leg Muscle" value={latest.left_leg_muscle_mass_kg} unit="kg" />
-              <StatPill label="R-Leg Muscle" value={latest.right_leg_muscle_mass_kg} unit="kg" />
+              <StatPill label="L-Leg Fat %" value={displayMeasurement.left_leg_fat_ratio_pct} unit="%" />
+              <StatPill label="R-Leg Fat %" value={displayMeasurement.right_leg_fat_ratio_pct} unit="%" />
+              <StatPill label="L-Leg Fat" value={displayMeasurement.left_leg_fat_mass_kg} unit="kg" />
+              <StatPill label="R-Leg Fat" value={displayMeasurement.right_leg_fat_mass_kg} unit="kg" />
+              <StatPill label="L-Leg Muscle %" value={displayMeasurement.left_leg_muscle_ratio_pct} unit="%" />
+              <StatPill label="R-Leg Muscle %" value={displayMeasurement.right_leg_muscle_ratio_pct} unit="%" />
+              <StatPill label="L-Leg Muscle" value={displayMeasurement.left_leg_muscle_mass_kg} unit="kg" />
+              <StatPill label="R-Leg Muscle" value={displayMeasurement.right_leg_muscle_mass_kg} unit="kg" />
             </div>
           </div>
         </Card>
       ) : (
         <Card variant="surface" className="p-8 text-center border-dashed border-[#27272a]">
-          <p className="font-display text-xl text-[var(--text-primary)] font-black uppercase">No Data Yet</p>
+          <p className="font-display text-xl text-[var(--text-primary)] font-black uppercase">
+            {selectedDate === today ? "No Data Yet" : "No Data for this Day"}
+          </p>
           <p className="font-body text-xs text-[var(--text-muted)] mt-2">
-            Log your first measurement to start tracking body composition.
+            {selectedDate === today
+              ? "Log your first measurement to start tracking body composition."
+              : "No measurement was logged on this day."}
           </p>
           <Button size="sm" variant="primary" className="mt-4 mx-auto"
-            onClick={() => router.push("/body-stats/log")}>
-            Log First Measurement
+            onClick={() => router.push(`/body-stats/log${selectedDate !== today ? `?date=${selectedDate}` : ``}`)}
+          >
+            {selectedDate === today ? "Log First Measurement" : "Log for this Day"}
           </Button>
         </Card>
       )}

@@ -26,18 +26,21 @@ export default async function SupplementsPage() {
   const { getProfileQueryTarget } = require("@/lib/profileConnection");
   const target = await getProfileQueryTarget(supabase, user.id);
 
-  const { data: logsRes } = await supabase
-    .from("supplement_logs")
-    .select("*")
-    .eq("user_id", target.userId)
-    .eq("profile_tag", target.profileTag)
-    .gte("logged_at", thirtyDaysAgoStr)
-    .order("logged_at", { ascending: false });
+  const [{ data: logsRes }, { data: profileData }] = await Promise.all([
+    supabase.from("supplement_logs")
+      .select("*")
+      .eq("user_id", target.userId)
+      .eq("profile_tag", target.profileTag)
+      .gte("logged_at", thirtyDaysAgoStr)
+      .order("logged_at", { ascending: false }),
+    supabase.from("profiles").select("program_start_date").eq("id", target.userId).maybeSingle()
+  ]);
 
   return (
     <SupplementsClient
       userId={target.userId}
       today={todayStr}
+      programStartDate={profileData?.program_start_date ?? null}
       initialLogs={logsRes || []}
       isReadOnly={target.userId !== user.id}
     />

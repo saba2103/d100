@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useAppUser } from "@/lib/contexts/AppContext";
@@ -11,10 +11,12 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils/cn";
 import { CountUp } from "@/components/ui/CountUp";
+import { TimelineCalendar } from "@/components/ui/TimelineCalendar";
 
 interface Props {
   userId: string;
   today: string;
+  programStartDate: string | null;
   caloriesGoal: number;
   consumed: number;
   initialBurned: number;
@@ -23,16 +25,69 @@ interface Props {
 }
 
 export function CaloriesTrackerClient({
-  userId, today, caloriesGoal, consumed, initialBurned, bmrKcal, isReadOnly = false,
+  userId, today, programStartDate, caloriesGoal, consumed, initialBurned, bmrKcal, isReadOnly = false,
 }: Props) {
   const router = useRouter();
   const { activeProfile } = useAppUser();
+  const [selectedDate, setSelectedDate] = useState(today);
+  const [consumedState, setConsumedState] = useState(consumed);
   const [burned, setBurned] = useState(initialBurned);
   const [burnedInput, setBurnedInput] = useState(initialBurned > 0 ? String(initialBurned) : "");
   const [saving, setSaving] = useState(false);
+  const [historyData, setHistoryData] = useState<Record<string, { consumed: number; burned: number }>>({});
+
+  // Load history on mount
+  useEffect(() => {
+    const fetchHistory = async () => {
+      if (!activeProfile) return;
+      const supabase = createClient();
+      const [statsRes, nutritionRes] = await Promise.all([
+        supabase.from("daily_stats")
+          .select("stat_date, calories_consumed, calories_burned")
+          .eq("user_id", userId)
+          .eq("profile_tag", activeProfile),
+        supabase.from("nutrition_logs")
+          .select("logged_at, items")
+          .eq("user_id", userId)
+          .eq("profile_tag", activeProfile)
+      ]);
+
+      const cache: Record<string, { consumed: number; burned: number }> = {};
+      
+      // Initialize default today values
+      cache[today] = { consumed, burned: initialBurned };
+
+      if (statsRes.data) {
+        statsRes.data.forEach((row) => {
+          if (!cache[row.stat_date]) cache[row.stat_date] = { consumed: 0, burned: 0 };
+          cache[row.stat_date].burned = row.calories_burned ?? 0;
+        });
+      }
+
+      if (nutritionRes.data) {
+        nutritionRes.data.forEach((row) => {
+          const items = (row.items as any[]) || [];
+          const logCal = items.reduce((s, i) => s + (Number(i.calories) || 0), 0);
+          if (!cache[row.logged_at]) cache[row.logged_at] = { consumed: 0, burned: 0 };
+          cache[row.logged_at].consumed += logCal;
+        });
+      }
+
+      setHistoryData(cache);
+    };
+    fetchHistory();
+  }, [userId, activeProfile, today, consumed, initialBurned]);
+
+  // Update displayed values when selected date or history cache changes
+  useEffect(() => {
+    const dayData = historyData[selectedDate] || { consumed: 0, burned: 0 };
+    setConsumedState(dayData.consumed);
+    setBurned(dayData.burned);
+    setBurnedInput(dayData.burned > 0 ? String(dayData.burned) : "");
+  }, [selectedDate, historyData]);
 
   // Derived values
-  const net = consumed - burned;
+  const net = consumedState - burned;
   const deficit = caloriesGoal - net;
   const isDeficit = net <= caloriesGoal;
   const netPct = Math.min(Math.abs(net / caloriesGoal) * 100, 100);
@@ -46,20 +101,34 @@ export function CaloriesTrackerClient({
     setSaving(true);
     const supabase = createClient();
     await supabase.from("daily_stats").upsert(
-      { user_id: userId, stat_date: today, calories_burned: val, calories_goal: caloriesGoal, profile_tag: activeProfile },
+      { user_id: userId, stat_date: selectedDate, calories_burned: val, calories_goal: caloriesGoal, profile_tag: activeProfile },
       { onConflict: "user_id,stat_date,profile_tag" }
     );
     await triggerBadgeCheck();
     setBurned(val);
+    
+    // Update local cache
+    setHistoryData((prev) => ({
+      ...prev,
+      [selectedDate]: {
+        ...(prev[selectedDate] || { consumed: 0 }),
+        burned: val
+      }
+    }));
     setSaving(false);
   };
 
   const formattedDate = (() => {
-    const [y, m, d] = today.split("-").map(Number);
+    const [y, m, d] = selectedDate.split("-").map(Number);
     return new Date(y, m - 1, d).toLocaleDateString("en-US", {
       weekday: "short", month: "short", day: "numeric",
     });
   })();
+
+  const hasDataOnDate = (dateStr: string) => {
+    const dayData = historyData[dateStr];
+    return !!dayData && (dayData.consumed > 0 || dayData.burned > 0);
+  };
 
   return (
     <div className="pb-28 pt-4 px-4 max-w-lg mx-auto space-y-5">
@@ -74,6 +143,15 @@ export function CaloriesTrackerClient({
           <Gear size={18} />
         </button>
       </div>
+
+      {/* Timeline Calendar */}
+      <TimelineCalendar
+        selectedDate={selectedDate}
+        today={today}
+        programStartDate={programStartDate}
+        onSelectDate={setSelectedDate}
+        hasDataOnDate={hasDataOnDate}
+      />
 
       {/* ── Main split display ── */}
       <Card variant="surface" className="p-6 space-y-5">
@@ -90,7 +168,7 @@ export function CaloriesTrackerClient({
               className="font-display text-4xl font-black leading-none"
               style={{ color: "var(--amber)" }}
             >
-              <CountUp value={consumed} formatter={(val) => Math.round(val).toLocaleString()} />
+              <CountUp value={consumedState} formatter={(val) => Math.round(val).toLocaleString()} />
             </span>
             <span className="font-body text-[10px] text-[var(--text-muted)]">kcal</span>
             <span className="mt-1 text-[10px] font-body text-[var(--text-muted)] italic">
@@ -176,8 +254,8 @@ export function CaloriesTrackerClient({
               onChange={(e) => setBurnedInput(e.target.value)}
               className="flex-1 font-body text-sm px-3 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--bg-base)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--red)] transition-colors"
             />
-            <Button type="submit" size="sm" variant="primary" disabled={saving}>
-              {saving ? "…" : "Save"}
+            <Button type="submit" size="sm" variant="primary" loading={saving} disabled={saving}>
+              Save
             </Button>
           </form>
         </Card>
