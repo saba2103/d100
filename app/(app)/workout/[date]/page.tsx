@@ -206,45 +206,44 @@ export default async function PastWorkoutPage({
                 return (
                   <div
                     key={setIdx}
-                    className="flex items-center justify-between py-1.5 px-2 rounded-lg bg-[var(--bg-base)] text-xs font-body"
+                    className="grid grid-cols-12 gap-3 items-center py-2 px-3 rounded-xl bg-[var(--bg-base)] border border-[var(--border)]/30 text-xs font-body"
                   >
-                    <span className="text-[var(--text-secondary)] font-medium">
+                    {/* Set Title */}
+                    <span className="col-span-3 text-[var(--text-secondary)] font-body-bold">
                       Set {setIdx + 1}
                     </span>
 
-                    <div className="flex items-center gap-6">
-                      <span className="text-[var(--text-primary)] font-body-bold">
-                        {set.reps || "0"}{" "}
-                        <span className="text-[var(--text-muted)] font-normal font-body text-[10px]">
-                          {isPlank ? "secs" : isCardio ? "mins" : "reps"}
-                        </span>
+                    {/* Metric 1: Reps / Secs / Mins */}
+                    <div className="col-span-3 text-center">
+                      <span className="font-display font-black text-sm text-[var(--text-primary)]">
+                        {set.reps || "0"}
                       </span>
-                      {isDurationType ? (
-                        <span className="text-[var(--text-primary)] font-body-bold">
-                          {set.weight_kg || "0"}{" "}
-                          <span className="text-[var(--text-muted)] font-normal font-body text-[10px]">
-                            mins
-                          </span>
+                      <span className="text-[var(--text-muted)] text-[9px] uppercase font-bold tracking-wider ml-1">
+                        {isPlank ? "sec" : isCardio ? "min" : "rep"}
+                      </span>
+                    </div>
+
+                    {/* Metric 2: Weight / Mins */}
+                    <div className="col-span-3 text-center">
+                      <span className="font-display font-black text-sm text-[var(--text-primary)]">
+                        {set.weight_kg || "0"}
+                      </span>
+                      <span className="text-[var(--text-muted)] text-[9px] uppercase font-bold tracking-wider ml-1">
+                        {isDurationType ? "min" : "kg"}
+                      </span>
+                    </div>
+
+                    {/* Status Badge */}
+                    <div className="col-span-3 text-right">
+                      {set.completed ? (
+                        <span className="inline-block px-2.5 py-0.5 rounded-full bg-[var(--green-soft)] text-[var(--green)] border border-[var(--green)]/20 font-body-bold text-[9px] uppercase tracking-wider">
+                          Done
                         </span>
                       ) : (
-                        <span className="text-[var(--text-primary)] font-body-bold">
-                          {set.weight_kg || "0"}{" "}
-                          <span className="text-[var(--text-muted)] font-normal font-body text-[10px]">
-                            kg
-                          </span>
+                        <span className="inline-block px-2.5 py-0.5 rounded-full bg-[var(--red-soft)] text-[var(--red)] border border-[var(--red)]/20 font-body-bold text-[9px] uppercase tracking-wider">
+                          Missed
                         </span>
                       )}
-                      <span className="w-16 text-right">
-                        {set.completed ? (
-                          <span className="px-2 py-0.5 rounded bg-[var(--green-soft)] text-[var(--green)] font-body-bold text-[9px] uppercase">
-                            Done
-                          </span>
-                        ) : (
-                          <span className="px-2 py-0.5 rounded bg-[var(--border)] text-[var(--text-muted)] font-body-bold text-[9px] uppercase">
-                            Missed
-                          </span>
-                        )}
-                      </span>
                     </div>
                   </div>
                 );
