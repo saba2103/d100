@@ -10,17 +10,26 @@ interface SASwitcherProps {
 }
 
 export function SASwitcher({ className }: SASwitcherProps) {
-  const { activeProfile, setActiveProfile, isPartnerConnected } = useAppUser();
+  const { activeProfile, setActiveProfile, isPartnerConnected, profile } = useAppUser();
   const router = useRouter();
 
-  // A button is locked unless partner is fully connected
-  const aButtonLocked = !isPartnerConnected;
+  // Determine owner (self) profile tag vs partner profile tag
+  const userEmail = profile?.email?.toLowerCase() || "";
+  const isAncy = userEmail.includes("ancy") || profile?.full_name?.toLowerCase().includes("ancy");
+  
+  const selfTag = isAncy ? "A" : "S";
+  const partnerTag = isAncy ? "S" : "A";
+
+  const buttonOrder = [selfTag, partnerTag] as const;
+
+  // Partner button is locked unless partner is fully connected
+  const partnerButtonLocked = !isPartnerConnected;
   // Extra visual lock state when actively viewing partner
-  const isViewingPartner = isPartnerConnected && activeProfile === "A";
+  const isViewingPartner = isPartnerConnected && activeProfile === partnerTag;
 
   const getTooltip = () => {
     if (isViewingPartner) return "Locked while viewing partner data";
-    if (aButtonLocked) return "Click to connect partner account";
+    if (partnerButtonLocked) return "Click to connect partner account";
     return undefined;
   };
 
@@ -29,7 +38,7 @@ export function SASwitcher({ className }: SASwitcherProps) {
       <div
         className={cn(
           "flex p-0.5 bg-[var(--bg-base)] border rounded-full items-center justify-between transition-all duration-200",
-          aButtonLocked
+          partnerButtonLocked
             ? "border-[var(--border)]"
             : isViewingPartner
             ? "border-orange-500/40 opacity-60"
@@ -38,17 +47,18 @@ export function SASwitcher({ className }: SASwitcherProps) {
         )}
         title={getTooltip()}
       >
-        {(["S", "A"] as const).map((p) => {
+        {buttonOrder.map((p) => {
           const isActive = activeProfile === p;
+          const isPartner = p === partnerTag;
           
-          // Disable button only if we are actively viewing partner and on A (can't re-select A)
-          const isDisableState = p === "A" && isViewingPartner;
+          // Disable button only if we are actively viewing partner
+          const isDisableState = isPartner && isViewingPartner;
 
           return (
             <button
               key={p}
               onClick={async () => {
-                if (p === "A" && aButtonLocked) {
+                if (isPartner && partnerButtonLocked) {
                   router.push("/profile");
                   return;
                 }
@@ -61,19 +71,19 @@ export function SASwitcher({ className }: SASwitcherProps) {
                 "flex-1 py-1 text-xs font-display rounded-full transition-all duration-200 text-center font-bold relative flex items-center justify-center h-6",
                 isActive
                   ? "bg-gradient-to-r from-[var(--accent-start)] to-[var(--accent-end)] text-white shadow-sm"
-                  : p === "A" && aButtonLocked
+                  : isPartner && partnerButtonLocked
                   ? "text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer"
                   : isDisableState
                   ? "text-[var(--text-muted)]/40 cursor-not-allowed"
                   : "text-[var(--text-muted)] hover:text-[var(--text-primary)]",
               )}
               aria-label={
-                p === "A" && aButtonLocked
+                isPartner && partnerButtonLocked
                   ? "Partner profile locked - Click to connect"
                   : `Switch profile to ${p}`
               }
             >
-              {p === "A" && aButtonLocked ? (
+              {isPartner && partnerButtonLocked ? (
                 <Lock size={12} weight="bold" />
               ) : (
                 p

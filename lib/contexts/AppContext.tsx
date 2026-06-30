@@ -106,6 +106,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const fetchSettings = useCallback(async (userId: string) => {
     const supabase = createClient();
+    
+    // Fetch logged in user's profile info
+    const { data: myProfile } = await (supabase as any)
+      .from("profiles")
+      .select("email, partner_email")
+      .eq("id", userId)
+      .single();
+
     const { data, error } = await supabase
       .from("user_settings")
       .select("*")
@@ -119,12 +127,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Check partner connection (two-way link)
-      const { data: myProfile } = await (supabase as any)
-        .from("profiles")
-        .select("email, partner_email")
-        .eq("id", userId)
-        .single();
-
       if (myProfile?.partner_email) {
         const partnerEmail = (myProfile.partner_email as string).trim().toLowerCase();
         const { data: partnerProfile } = await (supabase as any)
@@ -140,6 +142,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setIsPartnerConnected(false);
       }
     } else if (error && error.code === "PGRST116") {
+      // Check if logged in user is Ancy to set default active_profile
+      const userEmail = myProfile?.email?.toLowerCase() || "";
+      const isUserAncy = userEmail.includes("ancy");
+      const defaultActiveProfile = isUserAncy ? "A" : "S";
+
       // Row not found, create default settings
       const defaultSettings = {
         user_id: userId,
@@ -149,7 +156,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         water_goal_ml: 3000,
         steps_goal: 10000,
         calories_goal: 2000,
-        active_profile: "S" as const,
+        active_profile: defaultActiveProfile as "S" | "A",
       };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: inserted } = await supabase
