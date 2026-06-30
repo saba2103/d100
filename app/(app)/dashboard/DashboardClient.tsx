@@ -644,7 +644,7 @@ export default function DashboardClient({
                       "w-full flex items-center gap-3 p-3 rounded-xl border text-left transition-all duration-150",
                       isReadOnly && "cursor-default",
                       isChecked
-                        ? "bg-[rgba(16,185,129,0.06)] border-[var(--green)]/30 text-[var(--text-primary)]"
+                        ? "bg-[rgba(16,185,129,0.06)] border-[var(--border)] text-[var(--text-primary)]"
                         : "bg-[var(--bg-base)] border-[var(--border)] text-[var(--text-secondary)]" + (!isReadOnly ? " hover:border-[var(--accent-start)]/50" : ""),
                       lastCheckedSupp === supp.name && "row-flash-green"
                     )}
