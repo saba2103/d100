@@ -500,17 +500,9 @@ export function StoriesBar({ activeProfile, programDay, workoutStreak, profileNa
     if (activeSlideIdx < activeGroup.slides.length - 1) {
       setActiveSlideIdx((prev) => prev + 1);
     } else {
-      // Finished all slides in current group! Find next unlocked group
+      // Finished all slides in current group! Just close the modal.
       markStoryAsViewed(activeGroup.id);
-      const currentIdx = storyGroups.findIndex((g) => g.id === activeGroup.id);
-      const nextGroup = storyGroups.slice(currentIdx + 1).find((g) => !g.locked);
-      if (nextGroup) {
-        setActiveGroupId(nextGroup.id);
-        setActiveSlideIdx(0);
-      } else {
-        // Close modal
-        setActiveGroupId(null);
-      }
+      setActiveGroupId(null);
     }
   };
 
@@ -615,14 +607,14 @@ export function StoriesBar({ activeProfile, programDay, workoutStreak, profileNa
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center sm:p-4 backdrop-blur-md select-none"
+            className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center sm:p-4 backdrop-blur-md select-none h-[100dvh] w-screen"
             onMouseDown={() => setIsPaused(true)}
             onMouseUp={() => setIsPaused(false)}
             onTouchStart={() => setIsPaused(true)}
             onTouchEnd={() => setIsPaused(false)}
           >
             {/* Story Card Container */}
-            <div className="relative w-full h-full sm:max-w-md sm:h-[850px] sm:rounded-3xl overflow-hidden bg-[#09090b] flex flex-col justify-between shadow-2xl border border-[#27272a]">
+            <div className="relative w-full h-[100dvh] sm:max-w-md sm:h-[850px] sm:rounded-3xl overflow-hidden bg-[#09090b] flex flex-col justify-between shadow-2xl border-0 sm:border border-[#27272a]">
               
               {/* Background Image */}
               <div className="absolute inset-0 z-0">
