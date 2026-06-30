@@ -19,10 +19,11 @@ interface Props {
   consumed: number;
   initialBurned: number;
   bmrKcal: number | null;
+  isReadOnly?: boolean;
 }
 
 export function CaloriesTrackerClient({
-  userId, today, caloriesGoal, consumed, initialBurned, bmrKcal,
+  userId, today, caloriesGoal, consumed, initialBurned, bmrKcal, isReadOnly = false,
 }: Props) {
   const router = useRouter();
   const { activeProfile } = useAppUser();
@@ -40,6 +41,7 @@ export function CaloriesTrackerClient({
 
   const handleSaveBurned = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isReadOnly) return;
     const val = parseInt(burnedInput, 10) || 0;
     setSaving(true);
     const supabase = createClient();
@@ -162,22 +164,24 @@ export function CaloriesTrackerClient({
       </Card>
 
       {/* Manual burned input */}
-      <Card variant="surface" className="p-4">
-        <p className="font-body-bold text-xs text-[var(--text-muted)] uppercase tracking-wider mb-3">
-          Log Activity Calories Burned
-        </p>
-        <form onSubmit={handleSaveBurned} className="flex gap-2">
-          <input
-            type="number" inputMode="numeric" placeholder="e.g. 400"
-            value={burnedInput}
-            onChange={(e) => setBurnedInput(e.target.value)}
-            className="flex-1 font-body text-sm px-3 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--bg-base)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--red)] transition-colors"
-          />
-          <Button type="submit" size="sm" variant="primary" disabled={saving}>
-            {saving ? "…" : "Save"}
-          </Button>
-        </form>
-      </Card>
+      {!isReadOnly && (
+        <Card variant="surface" className="p-4">
+          <p className="font-body-bold text-xs text-[var(--text-muted)] uppercase tracking-wider mb-3">
+            Log Activity Calories Burned
+          </p>
+          <form onSubmit={handleSaveBurned} className="flex gap-2">
+            <input
+              type="number" inputMode="numeric" placeholder="e.g. 400"
+              value={burnedInput}
+              onChange={(e) => setBurnedInput(e.target.value)}
+              className="flex-1 font-body text-sm px-3 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--bg-base)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--red)] transition-colors"
+            />
+            <Button type="submit" size="sm" variant="primary" disabled={saving}>
+              {saving ? "…" : "Save"}
+            </Button>
+          </form>
+        </Card>
+      )}
 
       {/* Breakdown card */}
       <Card variant="surface" className="p-4 space-y-3">

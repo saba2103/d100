@@ -24,45 +24,45 @@ export default async function InsightsPage() {
     .eq("user_id", user.id)
     .single();
 
-  const profileId = (settings?.active_profile === "S" || settings?.active_profile === "A")
-    ? (settings.active_profile as "S" | "A")
-    : "S";
+  const { getProfileQueryTarget } = require("@/lib/profileConnection");
+  const target = await getProfileQueryTarget(supabase, user.id);
 
   const [profileRes, memberProfileRes] = await Promise.all([
     supabase
       .from("profiles")
       .select("program_start_date, full_name")
-      .eq("id", user.id)
+      .eq("id", target.userId)
       .single(),
     supabase
       .from("member_profiles")
       .select("program_start_date, full_name")
-      .eq("user_id", user.id)
-      .eq("profile_tag", profileId)
+      .eq("user_id", target.userId)
+      .eq("profile_tag", target.profileTag)
       .maybeSingle()
   ]);
 
   const profile = {
     ...profileRes.data,
     program_start_date: memberProfileRes.data?.program_start_date || profileRes.data?.program_start_date || null,
-    full_name: memberProfileRes.data?.full_name || profileRes.data?.full_name || (profileId === "S" ? "Saba" : "Ancy"),
+    full_name: memberProfileRes.data?.full_name || profileRes.data?.full_name || (target.profileTag === "S" ? "Saba" : "Ancy"),
   };
 
   // Fetch all saved per-day insights
   const { data: history } = await supabase
     .from("ai_insights" as any)
     .select("*")
-    .eq("user_id", user.id)
-    .eq("profile_tag", profileId)
+    .eq("user_id", target.userId)
+    .eq("profile_tag", target.profileTag)
     .order("created_at", { ascending: false })
     .limit(200);
 
   return (
     <InsightsClient
-      userId={user.id}
-      profileId={profileId}
+      userId={target.userId}
+      profileId={target.profileTag as "S" | "A"}
       programStartDate={profile?.program_start_date || null}
       initialHistory={(history as any) || []}
+      isReadOnly={target.userId !== user.id}
     />
   );
 }

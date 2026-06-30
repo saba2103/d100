@@ -19,19 +19,20 @@ export default async function CaloriesPage() {
 
   const { data: settingsData } = await supabase
     .from("user_settings")
-    .select("calories_goal, active_profile")
+    .select("calories_goal")
     .eq("user_id", user.id)
     .single();
 
-  const activeProfile = settingsData?.active_profile || "S";
+  const { getProfileQueryTarget } = require("@/lib/profileConnection");
+  const target = await getProfileQueryTarget(supabase, user.id);
   const caloriesGoal = settingsData?.calories_goal ?? 2000;
 
   const [statsRes, nutritionLogsRes, bodyRes] = await Promise.all([
     supabase.from("daily_stats")
       .select("calories_consumed,calories_burned,calories_goal")
-      .eq("user_id", user.id).eq("profile_tag", activeProfile).eq("stat_date", today).maybeSingle(),
-    supabase.from("nutrition_logs").select("items").eq("user_id", user.id).eq("profile_tag", activeProfile).eq("logged_at", today),
-    supabase.from("body_measurements").select("bmr_kcal").eq("user_id", user.id).eq("profile_tag", activeProfile)
+      .eq("user_id", target.userId).eq("profile_tag", target.profileTag).eq("stat_date", today).maybeSingle(),
+    supabase.from("nutrition_logs").select("items").eq("user_id", target.userId).eq("profile_tag", target.profileTag).eq("logged_at", today),
+    supabase.from("body_measurements").select("bmr_kcal").eq("user_id", target.userId).eq("profile_tag", target.profileTag)
       .order("measured_at", { ascending: false }).limit(1).maybeSingle(),
   ]);
 
@@ -43,12 +44,13 @@ export default async function CaloriesPage() {
 
   return (
     <CaloriesTrackerClient
-      userId={user.id}
+      userId={target.userId}
       today={today}
       caloriesGoal={caloriesGoal}
       consumed={consumed}
       initialBurned={statsRes.data?.calories_burned ?? 0}
       bmrKcal={bodyRes.data?.bmr_kcal ?? null}
+      isReadOnly={target.userId !== user.id}
     />
   );
 }

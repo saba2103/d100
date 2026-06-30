@@ -22,6 +22,7 @@ interface Props {
   initialSteps: number;
   historyDates: string[];
   historyStats: Record<string, { stat_date: string; steps: number; steps_goal: number }>;
+  isReadOnly?: boolean;
 }
 
 // ── Circular Ring ─────────────────────────────────────────────────────
@@ -34,48 +35,42 @@ function StepsRing({ steps, goal }: { steps: number; goal: number }) {
   const circ = 2 * Math.PI * r;
   const offset = circ - (pct / 100) * circ;
 
-  const color = goalMet ? "#F59E0B" : "var(--green)";
-
   return (
-    <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none"
-          stroke="var(--border)" strokeWidth={stroke} />
-        <motion.circle cx={size / 2} cy={size / 2} r={r} fill="none"
-          stroke={color} strokeWidth={stroke} strokeLinecap="round"
+    <div className="relative" style={{ width: size, height: size }}>
+      <svg className="w-full h-full transform -rotate-90">
+        <circle
+          cx={size / 2} cy={size / 2} r={r}
+          className="stroke-[var(--border)] fill-transparent"
+          strokeWidth={stroke}
+        />
+        <motion.circle
+          cx={size / 2} cy={size / 2} r={r}
+          className={cn(
+            "fill-transparent transition-all duration-500",
+            goalMet ? "stroke-[var(--green)]" : "stroke-[var(--accent-start)]"
+          )}
+          strokeWidth={stroke}
           strokeDasharray={circ}
           initial={{ strokeDashoffset: circ }}
           animate={{ strokeDashoffset: offset }}
-          transition={{ duration: 1.2, ease: "easeOut" }}
+          transition={{ duration: 1.0, ease: "easeOut" }}
+          strokeLinecap="round"
         />
       </svg>
-
-      {/* Center content */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center text-center select-none">
-        <span
-          className="font-display text-5xl font-black leading-none"
-          style={{ color: goalMet ? "#F59E0B" : "var(--text-primary)" }}
-        >
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+        <p className="font-display text-4xl font-black text-[var(--text-primary)]">
           <CountUp value={steps} formatter={(val) => Math.round(val).toLocaleString()} />
-        </span>
-        <span className="font-body text-xs text-[var(--text-muted)] mt-1">steps</span>
-        {goalMet ? (
-          <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            className="mt-2 text-sm font-body-bold" style={{ color: "#F59E0B" }}>
-            🎯 Goal Met!
-          </motion.span>
-        ) : (
-          <span className="mt-1.5 font-body text-[10px] text-[var(--text-muted)]">
-            {Math.round(pct)}% of goal
-          </span>
-        )}
+        </p>
+        <p className="text-[10px] text-[var(--text-muted)] font-body uppercase tracking-wider mt-1">
+          Steps today
+        </p>
       </div>
     </div>
   );
 }
 
 export function StepsTrackerClient({
-  userId, today, stepsGoal, initialSteps, historyDates, historyStats,
+  userId, today, stepsGoal, initialSteps, historyDates, historyStats, isReadOnly = false,
 }: Props) {
   const router = useRouter();
   const { activeProfile } = useAppUser();
@@ -85,9 +80,9 @@ export function StepsTrackerClient({
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    const val = parseInt(input, 10);
-    if (isNaN(val) || val < 0) return;
+    if (isReadOnly) return;
     setSaving(true);
+    const val = Number(input) || 0;
     const supabase = createClient();
     await supabase.from("daily_stats").upsert(
       { user_id: userId, stat_date: today, steps: val, steps_goal: stepsGoal, profile_tag: activeProfile },
@@ -152,25 +147,27 @@ export function StepsTrackerClient({
       </Card>
 
       {/* Manual entry */}
-      <Card variant="surface" className="p-4">
-        <p className="font-body-bold text-xs text-[var(--text-muted)] uppercase tracking-wider mb-3">
-          Update Steps
-        </p>
-        <form onSubmit={handleSave} className="flex gap-2">
-          <input
-            type="number" inputMode="numeric" placeholder="Enter today's steps"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            className="flex-1 font-body text-sm px-3 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--bg-base)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--green)] transition-colors"
-          />
-          <Button type="submit" size="sm" variant="primary" disabled={saving || !input}>
-            {saving ? "…" : "Save"}
-          </Button>
-        </form>
-        <p className="mt-2 text-[10px] text-[var(--text-muted)] font-body">
-          This replaces your current step count for today.
-        </p>
-      </Card>
+      {!isReadOnly && (
+        <Card variant="surface" className="p-4">
+          <p className="font-body-bold text-xs text-[var(--text-muted)] uppercase tracking-wider mb-3">
+            Update Steps
+          </p>
+          <form onSubmit={handleSave} className="flex gap-2">
+            <input
+              type="number" inputMode="numeric" placeholder="Enter today's steps"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              className="flex-1 font-body text-sm px-3 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--bg-base)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--green)] transition-colors"
+            />
+            <Button type="submit" size="sm" variant="primary" disabled={saving || !input}>
+              {saving ? "…" : "Save"}
+            </Button>
+          </form>
+          <p className="mt-2 text-[10px] text-[var(--text-muted)] font-body">
+            This replaces your current step count for today.
+          </p>
+        </Card>
+      )}
 
       {/* 7-day chart */}
       <Card variant="surface" className="p-4">

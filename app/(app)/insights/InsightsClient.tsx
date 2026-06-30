@@ -40,6 +40,7 @@ interface InsightsClientProps {
   profileId: "S" | "A";
   programStartDate: string | null;
   initialHistory: InsightItem[];
+  isReadOnly?: boolean;
 }
 
 function getDayNumber(startDate: string): number {
@@ -278,6 +279,7 @@ export function InsightsClient({
   profileId,
   programStartDate,
   initialHistory,
+  isReadOnly = false,
 }: InsightsClientProps) {
   const programDay = programStartDate ? getDayNumber(programStartDate) : 1;
   const [selectedDay, setSelectedDay] = useState(Math.min(programDay, 100));
@@ -318,6 +320,7 @@ export function InsightsClient({
   }, [selectedDay]);
 
   const handleGenerate = async () => {
+    if (isReadOnly) return;
     if (!programStartDate) {
       setError("Program start date not set. Go to Settings to configure your start date.");
       return;
@@ -487,6 +490,7 @@ export function InsightsClient({
       </AnimatePresence>
 
       {/* Fixed bottom Generate CTA */}
+      {!isReadOnly && (
       <div className="fixed bottom-20 left-0 right-0 z-40 px-4 max-w-2xl mx-auto">
         <div className="bg-[#09090b]/90 backdrop-blur-xl border border-zinc-800/80 rounded-3xl p-3 shadow-2xl">
           <button
@@ -520,6 +524,7 @@ export function InsightsClient({
           </button>
         </div>
       </div>
+      )}
 
       <style jsx>{`
         @keyframes bounce {

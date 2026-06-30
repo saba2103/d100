@@ -24,6 +24,7 @@ interface Props {
   initialStatsId: string | null;
   historyDates: string[];
   historyStats: Record<string, { stat_date: string; water_ml: number; water_goal_ml: number }>;
+  isReadOnly?: boolean;
 }
 
 // ── Bottle SVG fill visual ──────────────────────────────────────────────
@@ -107,7 +108,7 @@ function WaterBottle({ pct }: { pct: number }) {
 }
 
 export function WaterTrackerClient({
-  userId, today, waterGoal, initialWaterMl, historyDates, historyStats,
+  userId, today, waterGoal, initialWaterMl, historyDates, historyStats, isReadOnly = false,
 }: Props) {
   const router = useRouter();
   const { activeProfile } = useAppUser();
@@ -124,6 +125,7 @@ export function WaterTrackerClient({
 
   // Save to DB (upsert daily_stats)
   const saveWater = async (newMl: number) => {
+    if (isReadOnly) return;
     setSaving(true);
     const supabase = createClient();
     await supabase.from("daily_stats").upsert(
@@ -320,80 +322,82 @@ export function WaterTrackerClient({
       </Card>
 
       {/* Quick add/reduce buttons */}
-      <Card variant="surface" className="p-4">
-        <div className="flex items-center justify-between mb-3">
-          <p className="font-body-bold text-xs text-[var(--text-muted)] uppercase tracking-wider">
-            Quick Log
-          </p>
-          <div className="flex items-center bg-[var(--bg-base)] border border-[var(--border)] rounded-lg p-0.5">
-            <button
-              type="button"
-              onClick={() => setLogMode("add")}
-              className={cn(
-                "px-2.5 py-1 text-[10px] font-body font-body-bold rounded-md transition-all flex items-center gap-1",
-                logMode === "add"
-                  ? "bg-[#2196F3] text-white"
-                  : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-              )}
-            >
-              <Plus size={10} weight="bold" /> Add
-            </button>
-            <button
-              type="button"
-              onClick={() => setLogMode("reduce")}
-              className={cn(
-                "px-2.5 py-1 text-[10px] font-body font-body-bold rounded-md transition-all flex items-center gap-1",
-                logMode === "reduce"
-                  ? "bg-[var(--red)] text-white"
-                  : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-              )}
-            >
-              <Minus size={10} weight="bold" /> Reduce
-            </button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-4 gap-2">
-          {QUICK_AMOUNTS.map((amt) => {
-            const displayAmt = logMode === "add" ? `+${amt}` : `-${amt}`;
-            return (
+      {!isReadOnly && (
+        <Card variant="surface" className="p-4">
+          <div className="flex items-center justify-between mb-3">
+            <p className="font-body-bold text-xs text-[var(--text-muted)] uppercase tracking-wider">
+              Quick Log
+            </p>
+            <div className="flex items-center bg-[var(--bg-base)] border border-[var(--border)] rounded-lg p-0.5">
               <button
-                key={amt}
-                onClick={() => handleQuickAdd(logMode === "add" ? amt : -amt)}
-                disabled={saving}
+                type="button"
+                onClick={() => setLogMode("add")}
                 className={cn(
-                  "py-2.5 rounded-xl border border-[var(--border)] bg-[var(--bg-base)] text-xs font-body font-body-bold text-[var(--text-primary)] transition-all active:scale-95",
+                  "px-2.5 py-1 text-[10px] font-body font-body-bold rounded-md transition-all flex items-center gap-1",
                   logMode === "add"
-                    ? "hover:border-[#60B8FF]/60 hover:bg-[rgba(33,150,243,0.06)]"
-                    : "hover:border-[var(--red)]/60 hover:bg-[rgba(239,68,68,0.06)]"
+                    ? "bg-[#2196F3] text-white"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                 )}
               >
-                {displayAmt}ml
+                <Plus size={10} weight="bold" /> Add
               </button>
-            );
-          })}
-        </div>
+              <button
+                type="button"
+                onClick={() => setLogMode("reduce")}
+                className={cn(
+                  "px-2.5 py-1 text-[10px] font-body font-body-bold rounded-md transition-all flex items-center gap-1",
+                  logMode === "reduce"
+                    ? "bg-[var(--red)] text-white"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                )}
+              >
+                <Minus size={10} weight="bold" /> Reduce
+              </button>
+            </div>
+          </div>
 
-        {/* Custom amount */}
-        <form onSubmit={handleCustomAdd} className="mt-3 flex gap-2">
-          <input
-            type="number"
-            inputMode="numeric"
-            placeholder={logMode === "add" ? "Custom ml" : "Custom ml to reduce"}
-            value={customAmt}
-            onChange={(e) => setCustomAmt(e.target.value)}
-            className="flex-1 font-body text-sm px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--bg-base)] text-[var(--text-primary)] focus:outline-none focus:border-[#60B8FF] transition-colors"
-          />
-          <Button
-            type="submit"
-            size="sm"
-            variant={logMode === "add" ? "primary" : "danger"}
-            disabled={saving || !customAmt}
-          >
-            {logMode === "add" ? "Add" : "Reduce"}
-          </Button>
-        </form>
-      </Card>
+          <div className="grid grid-cols-4 gap-2">
+            {QUICK_AMOUNTS.map((amt) => {
+              const displayAmt = logMode === "add" ? `+${amt}` : `-${amt}`;
+              return (
+                <button
+                  key={amt}
+                  onClick={() => handleQuickAdd(logMode === "add" ? amt : -amt)}
+                  disabled={saving}
+                  className={cn(
+                    "py-2.5 rounded-xl border border-[var(--border)] bg-[var(--bg-base)] text-xs font-body font-body-bold text-[var(--text-primary)] transition-all active:scale-95",
+                    logMode === "add"
+                      ? "hover:border-[#60B8FF]/60 hover:bg-[rgba(33,150,243,0.06)]"
+                      : "hover:border-[var(--red)]/60 hover:bg-[rgba(239,68,68,0.06)]"
+                  )}
+                >
+                  {displayAmt}ml
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Custom amount */}
+          <form onSubmit={handleCustomAdd} className="mt-3 flex gap-2">
+            <input
+              type="number"
+              inputMode="numeric"
+              placeholder={logMode === "add" ? "Custom ml" : "Custom ml to reduce"}
+              value={customAmt}
+              onChange={(e) => setCustomAmt(e.target.value)}
+              className="flex-1 font-body text-sm px-3 py-2 rounded-xl border border-[var(--border)] bg-[var(--bg-base)] text-[var(--text-primary)] focus:outline-none focus:border-[#60B8FF] transition-colors"
+            />
+            <Button
+              type="submit"
+              size="sm"
+              variant={logMode === "add" ? "primary" : "danger"}
+              disabled={saving || !customAmt}
+            >
+              {logMode === "add" ? "Add" : "Reduce"}
+            </Button>
+          </form>
+        </Card>
+      )}
 
       {/* 7-day chart */}
       <Card variant="surface" className="p-4">

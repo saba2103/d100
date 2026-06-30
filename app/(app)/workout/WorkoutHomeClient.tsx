@@ -21,6 +21,7 @@ interface WorkoutHomeClientProps {
   profile: any;
   initialWorkouts: any[];
   today: string;
+  isReadOnly?: boolean;
 }
 
 import { COACH_WORKOUT_PLAN } from "@/lib/workoutPlan";
@@ -32,6 +33,7 @@ export function WorkoutHomeClient({
   profile,
   initialWorkouts,
   today,
+  isReadOnly = false,
 }: WorkoutHomeClientProps) {
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(today);
@@ -146,13 +148,15 @@ export function WorkoutHomeClient({
           </p>
         </div>
 
-        <Button
-          size="sm"
-          variant="primary"
-          onClick={() => router.push(`/workout/log?date=${today}`)}
-        >
-          <Plus size={16} weight="bold" /> Log Today
-        </Button>
+        {!isReadOnly && (
+          <Button
+            size="sm"
+            variant="primary"
+            onClick={() => router.push(`/workout/log?date=${today}`)}
+          >
+            <Plus size={16} weight="bold" /> Log Today
+          </Button>
+        )}
       </div>
 
       {/* Weekly strip - horizontal scrollable weeks */}
@@ -425,14 +429,16 @@ export function WorkoutHomeClient({
                   </p>
                 </div>
 
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  className="mt-2"
-                  onClick={() => router.push(`/workout/log?date=${selectedDate}`)}
-                >
-                  Log Custom Workout anyway
-                </Button>
+                {!isReadOnly && (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="mt-2"
+                    onClick={() => router.push(`/workout/log?date=${selectedDate}`)}
+                  >
+                    Log Custom Workout anyway
+                  </Button>
+                )}
               </div>
             ) : (
               /* PHASE 2 COMING SOON */
@@ -452,14 +458,16 @@ export function WorkoutHomeClient({
                   </p>
                 </div>
 
-                <Button
-                  size="sm"
-                  variant="primary"
-                  className="mt-2"
-                  onClick={() => router.push(`/workout/log?date=${selectedDate}`)}
-                >
-                  Log Custom Workout
-                </Button>
+                {!isReadOnly && (
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    className="mt-2"
+                    onClick={() => router.push(`/workout/log?date=${selectedDate}`)}
+                  >
+                    Log Custom Workout
+                  </Button>
+                )}
               </div>
             )}
           </Card>

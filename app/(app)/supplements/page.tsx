@@ -23,27 +23,23 @@ export default async function SupplementsPage() {
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
   const thirtyDaysAgoStr = thirtyDaysAgo.toLocaleDateString("sv-SE");
 
-  const { data: settingsData } = await supabase
-    .from("user_settings")
-    .select("active_profile")
-    .eq("user_id", user.id)
-    .single();
-
-  const activeProfile = settingsData?.active_profile || "S";
+  const { getProfileQueryTarget } = require("@/lib/profileConnection");
+  const target = await getProfileQueryTarget(supabase, user.id);
 
   const { data: logsRes } = await supabase
     .from("supplement_logs")
     .select("*")
-    .eq("user_id", user.id)
-    .eq("profile_tag", activeProfile)
+    .eq("user_id", target.userId)
+    .eq("profile_tag", target.profileTag)
     .gte("logged_at", thirtyDaysAgoStr)
     .order("logged_at", { ascending: false });
 
   return (
     <SupplementsClient
-      userId={user.id}
+      userId={target.userId}
       today={todayStr}
       initialLogs={logsRes || []}
+      isReadOnly={target.userId !== user.id}
     />
   );
 }

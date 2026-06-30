@@ -25,18 +25,19 @@ export default async function StepsPage() {
 
   const { data: settingsData } = await supabase
     .from("user_settings")
-    .select("steps_goal, active_profile")
+    .select("steps_goal")
     .eq("user_id", user.id)
     .single();
 
-  const activeProfile = settingsData?.active_profile || "S";
+  const { getProfileQueryTarget } = require("@/lib/profileConnection");
+  const target = await getProfileQueryTarget(supabase, user.id);
   const stepsGoal = settingsData?.steps_goal ?? 10000;
 
   const { data: statsData } = await supabase
     .from("daily_stats")
     .select("stat_date,steps,steps_goal")
-    .eq("user_id", user.id)
-    .eq("profile_tag", activeProfile)
+    .eq("user_id", target.userId)
+    .eq("profile_tag", target.profileTag)
     .in("stat_date", dates)
     .order("stat_date");
 
@@ -44,12 +45,13 @@ export default async function StepsPage() {
 
   return (
     <StepsTrackerClient
-      userId={user.id}
+      userId={target.userId}
       today={today}
       stepsGoal={stepsGoal}
       initialSteps={statsMap[today]?.steps ?? 0}
       historyDates={dates}
       historyStats={statsMap}
+      isReadOnly={target.userId !== user.id}
     />
   );
 }

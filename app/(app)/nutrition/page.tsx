@@ -39,37 +39,38 @@ export default async function NutritionPage() {
     active_profile: "S",
   };
 
-  const activeProfile = settings.active_profile as "S" | "A";
+  const { getProfileQueryTarget } = require("@/lib/profileConnection");
+  const target = await getProfileQueryTarget(supabase, user.id);
 
   const [profileRes, memberProfileRes, nutritionLogsRes, dailyStatsRes] =
     await Promise.all([
-      supabase.from("profiles").select("*").eq("id", user.id).single(),
+      supabase.from("profiles").select("*").eq("id", target.userId).single(),
       supabase
         .from("member_profiles")
         .select("*")
-        .eq("user_id", user.id)
-        .eq("profile_tag", activeProfile)
+        .eq("user_id", target.userId)
+        .eq("profile_tag", target.profileTag)
         .maybeSingle(),
       supabase
         .from("nutrition_logs")
         .select("*")
-        .eq("user_id", user.id)
-        .eq("profile_tag", activeProfile)
+        .eq("user_id", target.userId)
+        .eq("profile_tag", target.profileTag)
         .eq("logged_at", todayStr),
       supabase
         .from("daily_stats")
         .select("*")
-        .eq("user_id", user.id)
-        .eq("profile_tag", activeProfile)
+        .eq("user_id", target.userId)
+        .eq("profile_tag", target.profileTag)
         .eq("stat_date", todayStr)
         .maybeSingle(),
     ]);
 
   const profile = {
     ...profileRes.data,
-    id: user.id,
+    id: target.userId,
     program_start_date: memberProfileRes.data?.program_start_date || profileRes.data?.program_start_date || todayStr,
-    full_name: memberProfileRes.data?.full_name || profileRes.data?.full_name || (activeProfile === "S" ? "Saba" : "Ancy"),
+    full_name: memberProfileRes.data?.full_name || profileRes.data?.full_name || (target.profileTag === "S" ? "Saba" : "Ancy"),
   };
 
   return (
@@ -79,6 +80,7 @@ export default async function NutritionPage() {
       initialLogs={(nutritionLogsRes.data || []) as any[]}
       initialDailyStats={dailyStatsRes.data}
       today={todayStr}
+      isReadOnly={target.userId !== user.id}
     />
   );
 }

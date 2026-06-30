@@ -45,6 +45,7 @@ interface DashboardClientProps {
   workoutStreak: number;
   today: string;
   initialInsights: any[];
+  isReadOnly?: boolean;
 }
 
 import { COACH_SUPPLEMENT_PLAN, COACH_WORKOUT_PLAN } from "@/lib/workoutPlan";
@@ -62,6 +63,7 @@ export default function DashboardClient({
   workoutStreak,
   today,
   initialInsights,
+  isReadOnly = false,
 }: DashboardClientProps) {
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
@@ -185,6 +187,7 @@ export default function DashboardClient({
   };
 
   const handleSupplementToggle = async (suppName: string) => {
+    if (isReadOnly) return;
     const supabase = createClient();
     const isChecking = !supplementList.includes(suppName);
     if (isChecking) {
@@ -463,6 +466,10 @@ export default function DashboardClient({
                       <CheckCircle size={18} weight="fill" />
                       <span className="font-body-bold text-xs">Logged</span>
                     </div>
+                  ) : isReadOnly ? (
+                    <div className="flex items-center gap-1.5 text-[var(--text-muted)]">
+                      <span className="font-body-bold text-xs">Pending</span>
+                    </div>
                   ) : (
                     <Button
                       size="sm"
@@ -498,9 +505,11 @@ export default function DashboardClient({
                 <p className="text-[10px] text-[var(--text-muted)] font-body mt-0.5">Last Logged Composition</p>
               </div>
 
-              <Button size="sm" variant="secondary" onClick={() => setIsWeightModalOpen(true)}>
-                Log Today
-              </Button>
+              {!isReadOnly && (
+                <Button size="sm" variant="secondary" onClick={() => setIsWeightModalOpen(true)}>
+                  Log Today
+                </Button>
+              )}
             </div>
 
             <div className="grid grid-cols-3 gap-4">
@@ -594,11 +603,13 @@ export default function DashboardClient({
                   <button
                     key={supp.name}
                     onClick={() => handleSupplementToggle(supp.name)}
+                    disabled={isReadOnly}
                     className={cn(
                       "w-full flex items-center gap-3 p-3 rounded-xl border text-left transition-all duration-150",
+                      isReadOnly && "cursor-default",
                       isChecked
                         ? "bg-[rgba(16,185,129,0.06)] border-[var(--green)]/30 text-[var(--text-primary)]"
-                        : "bg-[var(--bg-base)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--accent-start)]/50",
+                        : "bg-[var(--bg-base)] border-[var(--border)] text-[var(--text-secondary)]" + (!isReadOnly ? " hover:border-[var(--accent-start)]/50" : ""),
                       lastCheckedSupp === supp.name && "row-flash-green"
                     )}
                   >

@@ -23,6 +23,7 @@ interface Props {
   userId: string;
   today: string;
   initialLogs: any[];
+  isReadOnly?: boolean;
 }
 
 interface Supplement {
@@ -38,7 +39,7 @@ import { COACH_SUPPLEMENT_PLAN } from "@/lib/workoutPlan";
 
 const COACH_SUPPLEMENTS: any[] = COACH_SUPPLEMENT_PLAN;
 
-export function SupplementsClient({ userId, today, initialLogs }: Props) {
+export function SupplementsClient({ userId, today, initialLogs, isReadOnly = false }: Props) {
   const router = useRouter();
   const { activeProfile } = useAppUser();
   const [logs, setLogs] = useState(initialLogs);
@@ -109,6 +110,7 @@ export function SupplementsClient({ userId, today, initialLogs }: Props) {
   const allDone = totalCount > 0 && takenCount === totalCount;
 
   const handleToggle = async (name: string) => {
+    if (isReadOnly) return;
     const isChecking = checklist.find(item => item.name === name)?.taken === false;
     if (isChecking) {
       setLastCheckedSupp(name);

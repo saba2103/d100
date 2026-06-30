@@ -31,21 +31,24 @@ export default async function BadgesPage() {
     .single();
   const activeProfile = settings?.active_profile || "S";
 
+  const { getProfileQueryTarget } = require("@/lib/profileConnection");
+  const target = await getProfileQueryTarget(supabase, user.id);
+
   // Sync / catch-up earned badges (tag-aware)
-  await checkAndAwardBadges(user.id, activeProfile);
+  await checkAndAwardBadges(target.userId, target.profileTag);
 
   // 1. Fetch profiles and member_profiles
   const [profileRes, memberProfileRes] = await Promise.all([
     supabase
       .from("profiles")
       .select("program_start_date")
-      .eq("id", user.id)
+      .eq("id", target.userId)
       .single(),
     supabase
       .from("member_profiles")
       .select("program_start_date")
-      .eq("user_id", user.id)
-      .eq("profile_tag", activeProfile)
+      .eq("user_id", target.userId)
+      .eq("profile_tag", target.profileTag)
       .maybeSingle()
   ]);
 
@@ -61,7 +64,7 @@ export default async function BadgesPage() {
   const { data: workoutLogs } = await supabase
     .from("workout_logs")
     .select("logged_at")
-    .eq("user_id", user.id);
+    .eq("user_id", target.userId);
 
   const workout_count = workoutLogs ? workoutLogs.length : 0;
   const workoutDates = new Set<string>(
@@ -71,9 +74,9 @@ export default async function BadgesPage() {
   if (startStr) {
     const start = new Date(startStr);
     start.setHours(0, 0, 0, 0);
-    const target = new Date(today);
-    target.setHours(0, 0, 0, 0);
-    const diffTime = target.getTime() - start.getTime();
+    const target2 = new Date(today);
+    target2.setHours(0, 0, 0, 0);
+    const diffTime = target2.getTime() - start.getTime();
     program_day = Math.max(1, Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1);
 
     // Calculate missed workouts on Mon/Wed/Fri before today
@@ -92,16 +95,16 @@ export default async function BadgesPage() {
   }
 
   // 3. Compute streaks (tag-aware)
-  const wStreak = await workoutStreak(supabase, user.id, activeProfile);
-  const nStreak = await nutritionStreak(supabase, user.id, activeProfile);
-  const watStreak = await waterStreak(supabase, user.id, activeProfile);
+  const wStreak = await workoutStreak(supabase, target.userId, target.profileTag);
+  const nStreak = await nutritionStreak(supabase, target.userId, target.profileTag);
+  const watStreak = await waterStreak(supabase, target.userId, target.profileTag);
 
   // 4. Fetch earned badges for active profile tag
   const { data: earnedBadges } = await supabase
     .from("user_badges")
     .select("badge_id, earned_at")
-    .eq("user_id", user.id)
-    .eq("profile_tag", activeProfile);
+    .eq("user_id", target.userId)
+    .eq("profile_tag", target.profileTag);
 
   const earnedList = earnedBadges || [];
 

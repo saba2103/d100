@@ -27,18 +27,20 @@ export default async function WaterPage() {
 
   const { data: settingsData } = await supabase
     .from("user_settings")
-    .select("water_goal_ml, active_profile")
+    .select("water_goal_ml")
     .eq("user_id", user.id)
     .single();
 
-  const activeProfile = settingsData?.active_profile || "S";
   const waterGoal = settingsData?.water_goal_ml ?? 3000;
+
+  const { getProfileQueryTarget } = require("@/lib/profileConnection");
+  const target = await getProfileQueryTarget(supabase, user.id);
 
   const { data: statsData } = await supabase
     .from("daily_stats")
     .select("stat_date,water_ml,water_goal_ml")
-    .eq("user_id", user.id)
-    .eq("profile_tag", activeProfile)
+    .eq("user_id", target.userId)
+    .eq("profile_tag", target.profileTag)
     .in("stat_date", dates)
     .order("stat_date");
 
@@ -47,13 +49,14 @@ export default async function WaterPage() {
 
   return (
     <WaterTrackerClient
-      userId={user.id}
+      userId={target.userId}
       today={today}
       waterGoal={waterGoal}
       initialWaterMl={todayStats?.water_ml ?? 0}
       initialStatsId={null}
       historyDates={dates}
       historyStats={statsMap}
+      isReadOnly={target.userId !== user.id}
     />
   );
 }

@@ -24,6 +24,8 @@ import {
   ShieldWarning,
   CircleNotch,
   GearSix,
+  Envelope,
+  Lock,
 } from "@phosphor-icons/react";
 
 // Local helper to format dates in local timezone as YYYY-MM-DD
@@ -59,6 +61,10 @@ export default function ProfilePage() {
   const [weightGoal, setWeightGoal] = useState("");
   const [bodyFatGoal, setBodyFatGoal] = useState("");
 
+  // Partner connection states
+  const [partnerEmail, setPartnerEmail] = useState("");
+  const [partnerConnectionStatus, setPartnerConnectionStatus] = useState<"none" | "awaiting" | "connected">("none");
+
   // Keep original values to check dirty state
   const [originalValues, setOriginalValues] = useState({
     fullName: "",
@@ -70,6 +76,7 @@ export default function ProfilePage() {
     startDate: "",
     weightGoal: "",
     bodyFatGoal: "",
+    partnerEmail: "",
   });
 
   // Warnings & Modals
@@ -101,7 +108,40 @@ export default function ProfilePage() {
 
       const activeTag = (settingsData?.active_profile || activeProfile || "S") as "S" | "A";
 
-      // 1. Fetch member_profiles row
+      // 1. Fetch main profiles row for partner email & self email
+      const { data: profileRow } = await (supabase
+        .from("profiles")
+        .select("partner_email, email") as any)
+        .eq("id", user.id)
+        .single();
+
+      let pEmail = (profileRow as any)?.partner_email || "";
+      let pStatus: "none" | "awaiting" | "connected" = "none";
+
+      if (pEmail) {
+        const { data: partnerRow } = await (supabase
+          .from("profiles")
+          .select("email, partner_email") as any)
+          .eq("email", pEmail.trim().toLowerCase())
+          .maybeSingle();
+
+        if (partnerRow) {
+          const selfEmailClean = (profileRow as any)?.email?.trim().toLowerCase();
+          const partnerLinkClean = (partnerRow as any).partner_email?.trim().toLowerCase();
+          if (selfEmailClean && partnerLinkClean === selfEmailClean) {
+            pStatus = "connected";
+          } else {
+            pStatus = "awaiting";
+          }
+        } else {
+          pStatus = "awaiting";
+        }
+      }
+
+      setPartnerEmail(pEmail);
+      setPartnerConnectionStatus(pStatus);
+
+      // 2. Fetch member_profiles row
       let { data: memberProfile, error } = await supabase
         .from("member_profiles")
         .select("*")
@@ -135,6 +175,7 @@ export default function ProfilePage() {
           startDate: string;
           weightGoal: string;
           bodyFatGoal: string;
+          partnerEmail: string;
         } = {
           fullName: memberProfile.full_name || "",
           phone: memberProfile.phone || "",
@@ -145,6 +186,7 @@ export default function ProfilePage() {
           startDate: memberProfile.program_start_date || "",
           weightGoal: memberProfile.current_weight_goal_kg ? String(memberProfile.current_weight_goal_kg) : "",
           bodyFatGoal: memberProfile.target_body_fat_pct ? String(memberProfile.target_body_fat_pct) : "",
+          partnerEmail: pEmail,
         };
 
         setFullName(initialForm.fullName);
@@ -275,9 +317,10 @@ export default function ProfilePage() {
       startingWeight !== originalValues.startingWeight ||
       startDate !== originalValues.startDate ||
       weightGoal !== originalValues.weightGoal ||
-      bodyFatGoal !== originalValues.bodyFatGoal
+      bodyFatGoal !== originalValues.bodyFatGoal ||
+      partnerEmail !== originalValues.partnerEmail
     );
-  }, [fullName, phone, dob, gender, height, startingWeight, startDate, weightGoal, bodyFatGoal, originalValues]);
+  }, [fullName, phone, dob, gender, height, startingWeight, startDate, weightGoal, bodyFatGoal, partnerEmail, originalValues]);
 
   // Actions: Save Profile
   const handleSaveForm = async () => {
@@ -310,7 +353,7 @@ export default function ProfilePage() {
       if (memberError) throw memberError;
 
       // 2. Sync to active main profiles table
-      const { error: profileError } = await supabase
+      const { error: profileError } = await (supabase
         .from("profiles")
         .update({
           full_name: fullName.trim(),
@@ -322,8 +365,9 @@ export default function ProfilePage() {
           program_start_date: startDate || null,
           current_weight_goal_kg: parsedWeightGoal,
           target_body_fat_pct: parsedFatGoal,
+          partner_email: partnerEmail.trim() || null,
           updated_at: new Date().toISOString(),
-        })
+        } as any) as any)
         .eq("id", user.id);
 
       if (profileError) throw profileError;
@@ -339,9 +383,11 @@ export default function ProfilePage() {
         startDate,
         weightGoal,
         bodyFatGoal,
+        partnerEmail,
       });
 
       await refresh();
+      await loadProfileData();
     } catch (err: any) {
       console.error(err);
       alert("Failed to save changes: " + (err.message || err));
@@ -391,7 +437,7 @@ export default function ProfilePage() {
 
       if (targetProfile) {
         // 2. Synchronize main profiles row
-        const { error: syncError } = await supabase
+        const { error: syncError } = await (supabase
           .from("profiles")
           .update({
             display_name: nextProfile,
@@ -406,7 +452,7 @@ export default function ProfilePage() {
             current_weight_goal_kg: targetProfile.current_weight_goal_kg || null,
             target_body_fat_pct: targetProfile.target_body_fat_pct || null,
             updated_at: new Date().toISOString(),
-          })
+          } as any) as any)
           .eq("id", user.id);
 
         if (syncError) throw syncError;
@@ -604,16 +650,40 @@ export default function ProfilePage() {
             </h3>
 
             <div className="flex flex-col gap-3">
+              {/* Partner Connection Status */}
+              <div className="space-y-2 mb-2">
+                <h4 className="font-body-bold text-[10px] uppercase tracking-wider text-[var(--text-muted)]">Partner Sync Status</h4>
+                {partnerConnectionStatus === "connected" && (
+                  <div className="flex items-center gap-2 px-3 py-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl text-[11px] font-body-bold">
+                    <CheckCircle size={16} weight="bold" />
+                    <span>CONNECTED TO {partnerEmail}</span>
+                  </div>
+                )}
+                {partnerConnectionStatus === "awaiting" && (
+                  <div className="flex items-center gap-2 px-3 py-2 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-xl text-[11px] font-body-bold">
+                    <Warning size={16} weight="bold" />
+                    <span>AWAITING PARTNER LINK</span>
+                  </div>
+                )}
+                {partnerConnectionStatus === "none" && (
+                  <div className="px-3 py-2 bg-[var(--bg-elevated)] border border-[var(--border)] text-[var(--text-muted)] rounded-xl text-[11px] font-body">
+                    <span>Enter partner email below to connect.</span>
+                  </div>
+                )}
+              </div>
+
               <Button
                 variant="secondary"
-                disabled={switching}
+                disabled={switching || partnerConnectionStatus !== "connected"}
                 onClick={handleSwitchProfile}
                 className="w-full flex items-center justify-center gap-2 text-xs font-display font-black py-2.5 uppercase tracking-wider"
               >
                 {switching ? (
                   <CircleNotch size={16} className="animate-spin" />
-                ) : (
+                ) : partnerConnectionStatus === "connected" ? (
                   <ArrowsLeftRight size={16} />
+                ) : (
+                  <Lock size={16} />
                 )}
                 Switch to {otherProfileName}
               </Button>
@@ -727,6 +797,17 @@ export default function ProfilePage() {
                 onChange={handleDateChange}
                 hint="Locked program start date (Day 1: 30 June 2026)"
                 disabled
+              />
+
+              {/* Partner Email Address */}
+              <Input
+                label="Partner Email Address"
+                type="email"
+                value={partnerEmail}
+                onChange={(e) => setPartnerEmail(e.target.value)}
+                placeholder="partner@example.com"
+                hint="Enter partner's registered email to link accounts and sync stats."
+                leftIcon={<Envelope size={18} />}
               />
             </div>
 

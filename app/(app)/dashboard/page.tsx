@@ -4,6 +4,7 @@ import DashboardClient from "./DashboardClient";
 import { workoutStreak } from "@/lib/streaks";
 import { checkAndAwardBadges } from "@/lib/achievements";
 import { getTodayStr } from "@/lib/utils/date";
+import { getProfileQueryTarget } from "@/lib/profileConnection";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -41,9 +42,10 @@ export default async function DashboardPage() {
   };
 
   const activeProfile = settings.active_profile as "S" | "A";
+  const target = await getProfileQueryTarget(supabase, user.id);
 
-  // Sync / catch-up earned badges for active profile
-  await checkAndAwardBadges(user.id, activeProfile);
+  // Sync / catch-up earned badges for target profile
+  await checkAndAwardBadges(target.userId, target.profileTag);
 
   const todayStr = getTodayStr();
 
@@ -62,68 +64,68 @@ export default async function DashboardPage() {
     supabase
       .from("profiles")
       .select("*")
-      .eq("id", user.id)
+      .eq("id", target.userId)
       .single(),
     
     supabase
       .from("member_profiles")
       .select("*")
-      .eq("user_id", user.id)
-      .eq("profile_tag", activeProfile)
+      .eq("user_id", target.userId)
+      .eq("profile_tag", target.profileTag)
       .maybeSingle(),
 
     supabase
       .from("daily_stats")
       .select("*")
-      .eq("user_id", user.id)
-      .eq("profile_tag", activeProfile)
+      .eq("user_id", target.userId)
+      .eq("profile_tag", target.profileTag)
       .eq("stat_date", todayStr)
       .maybeSingle(),
     
     supabase
       .from("workout_logs")
       .select("*")
-      .eq("user_id", user.id)
-      .eq("profile_tag", activeProfile)
+      .eq("user_id", target.userId)
+      .eq("profile_tag", target.profileTag)
       .eq("logged_at", todayStr)
       .maybeSingle(),
     
     supabase
       .from("supplement_logs")
       .select("*")
-      .eq("user_id", user.id)
-      .eq("profile_tag", activeProfile)
+      .eq("user_id", target.userId)
+      .eq("profile_tag", target.profileTag)
       .eq("logged_at", todayStr)
       .maybeSingle(),
     
     supabase
       .from("body_measurements")
       .select("*")
-      .eq("user_id", user.id)
-      .eq("profile_tag", activeProfile)
+      .eq("user_id", target.userId)
+      .eq("profile_tag", target.profileTag)
       .order("measured_at", { ascending: false })
       .limit(2),
     
     supabase
       .from("user_badges")
       .select("*")
-      .eq("user_id", user.id)
-      .eq("profile_tag", activeProfile)
+      .eq("user_id", target.userId)
+      .eq("profile_tag", target.profileTag)
       .order("earned_at", { ascending: false }),
 
-    workoutStreak(supabase, user.id, activeProfile),
+    workoutStreak(supabase, target.userId, target.profileTag),
 
     supabase
       .from("ai_insights" as any)
       .select("*")
-      .eq("user_id", user.id)
-      .eq("profile_tag", activeProfile)
+      .eq("user_id", target.userId)
+      .eq("profile_tag", target.profileTag)
       .order("created_at", { ascending: false }),
   ]);
 
   const profile = {
     ...profileRes.data,
-    id: user.id,
+    id: target.userId,
     program_start_date: memberProfileRes.data?.program_start_date || profileRes.data?.program_start_date || todayStr,
     full_name: memberProfileRes.data?.full_name || profileRes.data?.full_name || (activeProfile === "S" ? "Saba" : "Ancy"),
   };
@@ -140,6 +142,7 @@ export default async function DashboardPage() {
       workoutStreak={wStreak}
       today={todayStr}
       initialInsights={aiInsightsRes.data || []}
+      isReadOnly={target.userId !== user.id}
     />
   );
 }

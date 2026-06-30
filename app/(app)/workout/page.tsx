@@ -24,41 +24,36 @@ export default async function WorkoutPage() {
 
   const todayStr = getTodayStr();
 
-  const { data: settingsData } = await supabase
-    .from("user_settings")
-    .select("active_profile")
-    .eq("user_id", user.id)
-    .single();
-
-  const activeProfile = settingsData?.active_profile || "S";
+  const { getProfileQueryTarget } = require("@/lib/profileConnection");
+  const target = await getProfileQueryTarget(supabase, user.id);
 
   // Fetch profile and recent workouts
   const [profileRes, memberProfileRes, workoutsRes] = await Promise.all([
     supabase
       .from("profiles")
       .select("*")
-      .eq("id", user.id)
+      .eq("id", target.userId)
       .single(),
     supabase
       .from("member_profiles")
       .select("*")
-      .eq("user_id", user.id)
-      .eq("profile_tag", activeProfile)
+      .eq("user_id", target.userId)
+      .eq("profile_tag", target.profileTag)
       .maybeSingle(),
     supabase
       .from("workout_logs")
       .select("*")
-      .eq("user_id", user.id)
-      .eq("profile_tag", activeProfile)
+      .eq("user_id", target.userId)
+      .eq("profile_tag", target.profileTag)
       .order("logged_at", { ascending: false })
       .limit(30),
   ]);
 
   const profile = {
     ...profileRes.data,
-    id: user.id,
+    id: target.userId,
     program_start_date: memberProfileRes.data?.program_start_date || profileRes.data?.program_start_date || todayStr,
-    full_name: memberProfileRes.data?.full_name || profileRes.data?.full_name || (activeProfile === "S" ? "Saba" : "Ancy"),
+    full_name: memberProfileRes.data?.full_name || profileRes.data?.full_name || (target.profileTag === "S" ? "Saba" : "Ancy"),
   };
 
   const workouts = workoutsRes.data || [];
@@ -68,6 +63,7 @@ export default async function WorkoutPage() {
       profile={profile}
       initialWorkouts={workouts}
       today={todayStr}
+      isReadOnly={target.userId !== user.id}
     />
   );
 }

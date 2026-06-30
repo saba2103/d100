@@ -42,6 +42,7 @@ interface Props {
   initialLogs: NutritionLog[];
   initialDailyStats: any;
   today: string;
+  isReadOnly?: boolean;
 }
 
 // ── Meal Config ────────────────────────────────────────────────────────
@@ -340,7 +341,7 @@ function FoodItemRow({
   onPreviewImage,
 }: {
   item: FoodItem;
-  onDelete: () => void;
+  onDelete?: () => void;
   onPreviewImage: (url: string) => void;
 }) {
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
@@ -386,27 +387,30 @@ function FoodItemRow({
           {item.fat_g > 0    && ` · F ${item.fat_g}g`}
         </p>
       </div>
-      <button
-        type="button"
-        onClick={onDelete}
-        className="p-1.5 text-[var(--text-muted)] hover:text-[var(--red)] opacity-70 group-hover:opacity-100 transition-all shrink-0"
-        aria-label="Delete item"
-      >
-        <Trash size={14} />
-      </button>
+      {onDelete && (
+        <button
+          type="button"
+          onClick={onDelete}
+          className="p-1.5 text-[var(--text-muted)] hover:text-[var(--red)] opacity-70 group-hover:opacity-100 transition-all shrink-0"
+          aria-label="Delete item"
+        >
+          <Trash size={14} />
+        </button>
+      )}
     </div>
   );
 }
 
 // ── Meal Accordion ─────────────────────────────────────────────────────
 function MealSection({
-  meal, items, onAdd, onDelete, onPreviewImage,
+  meal, items, onAdd, onDelete, onPreviewImage, isReadOnly = false,
 }: {
   meal: { key: MealType; label: string; emoji: string };
   items: FoodItem[];
   onAdd: () => void;
   onDelete: (idx: number) => void;
   onPreviewImage: (url: string) => void;
+  isReadOnly?: boolean;
 }) {
   const [open, setOpen] = useState(items.length > 0);
   const totalCal = items.reduce((s, i) => s + (i.calories || 0), 0);
@@ -431,14 +435,16 @@ function MealSection({
           )}
         </div>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); onAdd(); }}
-            className="p-1.5 rounded-lg hover:bg-[var(--bg-elevated)] text-[var(--accent-text)] transition-colors"
-            aria-label={`Add food to ${meal.label}`}
-          >
-            <Plus size={16} weight="bold" />
-          </button>
+          {!isReadOnly && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onAdd(); }}
+              className="p-1.5 rounded-lg hover:bg-[var(--bg-elevated)] text-[var(--accent-text)] transition-colors"
+              aria-label={`Add food to ${meal.label}`}
+            >
+              <Plus size={16} font-body-bold="true" />
+            </button>
+          )}
           {open ? <CaretDown size={14} className="text-[var(--text-muted)]" />
                 : <CaretRight size={14} className="text-[var(--text-muted)]" />}
         </div>
@@ -457,14 +463,14 @@ function MealSection({
             <div className="px-4 pb-3 space-y-1.5 border-t border-[var(--border)]/50 pt-2">
               {items.length === 0 ? (
                 <p className="text-xs text-[var(--text-muted)] font-body py-2 text-center">
-                  Tap + to log your {meal.label.toLowerCase()}
+                  {isReadOnly ? "No meals logged" : `Tap + to log your ${meal.label.toLowerCase()}`}
                 </p>
               ) : (
                 items.map((item, idx) => (
                   <FoodItemRow
                     key={idx}
                     item={item}
-                    onDelete={() => onDelete(idx)}
+                    onDelete={isReadOnly ? undefined : () => onDelete(idx)}
                     onPreviewImage={onPreviewImage}
                   />
                 ))
@@ -478,7 +484,7 @@ function MealSection({
 }
 
 // ── Main Client Component ──────────────────────────────────────────────
-export function NutritionClient({ profile, settings, initialLogs, initialDailyStats, today }: Props) {
+export function NutritionClient({ profile, settings, initialLogs, initialDailyStats, today, isReadOnly = false }: Props) {
   const router = useRouter();
   const { activeProfile } = useAppUser();
   const [selectedDate, setSelectedDate] = useState(today);
@@ -695,6 +701,7 @@ export function NutritionClient({ profile, settings, initialLogs, initialDailySt
             onAdd={() => openSheet(meal.key)}
             onDelete={(idx) => handleDeleteItem(meal.key, idx)}
             onPreviewImage={(url) => setPreviewImageUrl(url)}
+            isReadOnly={isReadOnly}
           />
         ))}
       </div>
