@@ -42,20 +42,15 @@ export default async function PastWorkoutPage({
 
   const { date } = params;
 
-  const { data: settingsData } = await supabase
-    .from("user_settings")
-    .select("active_profile")
-    .eq("user_id", user.id)
-    .single();
-
-  const activeProfile = settingsData?.active_profile || "S";
+  const { getProfileQueryTarget } = require("@/lib/profileConnection");
+  const target = await getProfileQueryTarget(supabase, user.id);
 
   // Retrieve workout logs for this date
   const { data: log, error } = await supabase
     .from("workout_logs")
     .select("*")
-    .eq("user_id", user.id)
-    .eq("profile_tag", activeProfile)
+    .eq("user_id", target.userId)
+    .eq("profile_tag", target.profileTag)
     .eq("logged_at", date)
     .maybeSingle();
 

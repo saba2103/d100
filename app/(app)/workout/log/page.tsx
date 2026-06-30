@@ -35,34 +35,29 @@ export default async function LogWorkoutPage({
   const targetDate = searchParams.date || todayStr;
   const isEditing = searchParams.edit === "true";
 
-  const { data: settingsData } = await supabase
-    .from("user_settings")
-    .select("active_profile")
-    .eq("user_id", user.id)
-    .single();
-
-  const activeProfile = settingsData?.active_profile || "S";
+  const { getProfileQueryTarget } = require("@/lib/profileConnection");
+  const target = await getProfileQueryTarget(supabase, user.id);
 
   // Fetch profile, last logged workout (for placeholders), and optionally the current logged workout (if editing)
   const [profileRes, memberProfileRes, lastWorkoutRes, currentWorkoutRes] = await Promise.all([
     supabase
       .from("profiles")
       .select("*")
-      .eq("id", user.id)
+      .eq("id", target.userId)
       .single(),
     supabase
       .from("member_profiles")
       .select("*")
-      .eq("user_id", user.id)
-      .eq("profile_tag", activeProfile)
+      .eq("user_id", target.userId)
+      .eq("profile_tag", target.profileTag)
       .maybeSingle(),
     
     // Find last logged workout before the target date
     supabase
       .from("workout_logs")
       .select("*")
-      .eq("user_id", user.id)
-      .eq("profile_tag", activeProfile)
+      .eq("user_id", target.userId)
+      .eq("profile_tag", target.profileTag)
       .lt("logged_at", targetDate)
       .order("logged_at", { ascending: false })
       .limit(1)
@@ -72,17 +67,17 @@ export default async function LogWorkoutPage({
     supabase
       .from("workout_logs")
       .select("*")
-      .eq("user_id", user.id)
-      .eq("profile_tag", activeProfile)
+      .eq("user_id", target.userId)
+      .eq("profile_tag", target.profileTag)
       .eq("logged_at", targetDate)
       .maybeSingle(),
   ]);
 
   const profile = {
     ...profileRes.data,
-    id: user.id,
+    id: target.userId,
     program_start_date: memberProfileRes.data?.program_start_date || profileRes.data?.program_start_date || todayStr,
-    full_name: memberProfileRes.data?.full_name || profileRes.data?.full_name || (activeProfile === "S" ? "Saba" : "Ancy"),
+    full_name: memberProfileRes.data?.full_name || profileRes.data?.full_name || (target.profileTag === "S" ? "Saba" : "Ancy"),
   };
 
   return (
