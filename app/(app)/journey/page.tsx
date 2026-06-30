@@ -29,7 +29,7 @@ export default async function JourneyPage() {
     ...profileRes.data,
     id: target.userId,
     program_start_date: memberProfileRes.data?.program_start_date || profileRes.data?.program_start_date || getTodayStr(),
-    full_name: memberProfileRes.data?.full_name || profileRes.data?.full_name || (target.profileTag === "S" ? "Saba" : "Ancy"),
+    full_name: memberProfileRes.data?.full_name || profileRes.data?.full_name || (target.userId === user.id ? "Self" : "Partner"),
   };
 
   // Daily Stats for consistency and water

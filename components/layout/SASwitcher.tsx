@@ -1,9 +1,11 @@
 "use client";
 
+import React, { useState, useEffect } from "react";
 import { useAppUser } from "@/lib/contexts/AppContext";
 import { cn } from "@/lib/utils/cn";
 import { useRouter } from "next/navigation";
 import { Lock } from "@phosphor-icons/react";
+import { createClient } from "@/lib/supabase/client";
 
 interface SASwitcherProps {
   className?: string;
@@ -13,12 +15,64 @@ export function SASwitcher({ className }: SASwitcherProps) {
   const { activeProfile, setActiveProfile, isPartnerConnected, profile } = useAppUser();
   const router = useRouter();
 
-  // Determine owner (self) profile tag vs partner profile tag
-  const userEmail = profile?.email?.toLowerCase() || "";
-  const isAncy = userEmail.includes("ancy") || profile?.full_name?.toLowerCase().includes("ancy");
-  
-  const selfTag = isAncy ? "A" : "S";
-  const partnerTag = isAncy ? "S" : "A";
+  const [memberNames, setMemberNames] = useState<Record<"S" | "A", string>>({
+    S: "Self",
+    A: "Partner",
+  });
+
+  const [partnerDisplayTag, setPartnerDisplayTag] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!profile?.id) return;
+    const supabase = createClient();
+    supabase
+      .from("member_profiles")
+      .select("profile_tag, full_name")
+      .eq("user_id", profile.id)
+      .then(({ data }) => {
+        if (data) {
+          const names = { ...memberNames };
+          data.forEach((row) => {
+            if (row.profile_tag && row.full_name) {
+              names[row.profile_tag] = row.full_name;
+            }
+          });
+          setMemberNames(names);
+        }
+      });
+  }, [profile?.id]);
+
+  useEffect(() => {
+    const partnerEmail = (profile as any)?.partner_email;
+    if (!isPartnerConnected || !partnerEmail) return;
+    const supabase = createClient();
+    supabase
+      .from("profiles")
+      .select("display_name, full_name")
+      .eq("email", partnerEmail.trim().toLowerCase())
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          if (data.display_name) {
+            setPartnerDisplayTag(data.display_name);
+          }
+          if (data.full_name) {
+            setMemberNames((prev) => ({ ...prev, A: data.full_name || "Partner" }));
+          }
+        }
+      });
+  }, [isPartnerConnected, (profile as any)?.partner_email]);
+
+  const getLetterForTag = (tag: "S" | "A") => {
+    if (tag === "S") {
+      return profile?.display_name || "S";
+    } else {
+      return partnerDisplayTag || "A";
+    }
+  };
+
+  const selfTag = "S";
+  const partnerTag = "A";
 
   const buttonOrder = [selfTag, partnerTag] as const;
 
@@ -86,7 +140,7 @@ export function SASwitcher({ className }: SASwitcherProps) {
               {isPartner && partnerButtonLocked ? (
                 <Lock size={12} weight="bold" />
               ) : (
-                p
+                getLetterForTag(p)
               )}
             </button>
           );

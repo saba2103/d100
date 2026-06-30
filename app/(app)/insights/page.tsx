@@ -44,7 +44,7 @@ export default async function InsightsPage() {
   const profile = {
     ...profileRes.data,
     program_start_date: memberProfileRes.data?.program_start_date || profileRes.data?.program_start_date || null,
-    full_name: memberProfileRes.data?.full_name || profileRes.data?.full_name || (target.profileTag === "S" ? "Saba" : "Ancy"),
+    full_name: memberProfileRes.data?.full_name || profileRes.data?.full_name || (target.userId === user.id ? "Self" : "Partner"),
   };
 
   // Fetch all saved per-day insights

@@ -5,6 +5,7 @@ import { X, Lock, Check, Sparkle, Fire, Crown, Trophy, Rocket, Star, Heart, Flam
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils/cn";
 import { createClient } from "@/lib/supabase/client";
+import { useAppUser } from "@/lib/contexts/AppContext";
 
 interface StoriesBarProps {
   activeProfile: string;
@@ -55,6 +56,39 @@ function getDayNumber(dateStr: string, startDate: string): number {
 }
 
 export function StoriesBar({ activeProfile, programDay, workoutStreak, profileName, userId, programStartDate, isPartnerConnected }: StoriesBarProps) {
+  const { profile } = useAppUser();
+
+  const [partnerName, setPartnerName] = useState<string>("Partner");
+  const [partnerDisplayTag, setPartnerDisplayTag] = useState<string | null>(null);
+  const [partnerAvatarUrl, setPartnerAvatarUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const partnerEmail = (profile as any)?.partner_email;
+    if (!isPartnerConnected || !partnerEmail) return;
+    const supabase = createClient();
+    supabase
+      .from("profiles")
+      .select("display_name, full_name, avatar_url")
+      .eq("email", partnerEmail.trim().toLowerCase())
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          if (data.display_name) {
+            setPartnerDisplayTag(data.display_name);
+          }
+          if (data.full_name) {
+            setPartnerName(data.full_name);
+          }
+          if (data.avatar_url) {
+            setPartnerAvatarUrl(data.avatar_url);
+          }
+        }
+      });
+  }, [isPartnerConnected, (profile as any)?.partner_email]);
+
+  const selfLetter = profile?.display_name || "S";
+  const partnerLetter = partnerDisplayTag || "A";
+
   const [viewedStories, setViewedStories] = useState<Record<string, boolean>>({});
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
   const [activeSlideIdx, setActiveSlideIdx] = useState(0);
@@ -62,8 +96,8 @@ export function StoriesBar({ activeProfile, programDay, workoutStreak, profileNa
   // Map of dayNumber → signed photo URL (only days that have photos)
   const [photoByDay, setPhotoByDay] = useState<Record<number, { url: string; date: string }>>({});
 
-  const [sabaAvatar, setSabaAvatar] = useState<string | null>(null);
-  const [ancyAvatar, setAncyAvatar] = useState<string | null>(null);
+  const [selfAvatar, setSelfAvatar] = useState<string | null>(null);
+  const [partnerAvatar, setPartnerAvatar] = useState<string | null>(null);
 
   // Load viewed state from localStorage
   useEffect(() => {
@@ -88,8 +122,8 @@ export function StoriesBar({ activeProfile, programDay, workoutStreak, profileNa
       if (memberProfiles) {
         for (const mp of memberProfiles) {
           if (mp.avatar_url) {
-            if (mp.profile_tag === "S") setSabaAvatar(mp.avatar_url);
-            if (mp.profile_tag === "A") setAncyAvatar(mp.avatar_url);
+            if (mp.profile_tag === "S") setSelfAvatar(mp.avatar_url);
+            if (mp.profile_tag === "A") setPartnerAvatar(mp.avatar_url);
           }
         }
       }
@@ -141,7 +175,7 @@ export function StoriesBar({ activeProfile, programDay, workoutStreak, profileNa
       return {
         id: `day_${day}`,
         bgImage: photo.url,
-        tag: `DAY ${day} • PROFILE ${activeProfile}`,
+        tag: `DAY ${day} • PROFILE ${selfLetter}`,
         tagColor: "text-[#FF6B00] bg-[#FF6B00]/15 border-[#FF6B00]/30",
         title: `DAY ${day}`,
         subtitle: photo.date,
@@ -184,9 +218,9 @@ export function StoriesBar({ activeProfile, programDay, workoutStreak, profileNa
     {
       id: "your_progress",
       title: "You",
-      avatarText: activeProfile,
+      avatarText: selfLetter,
       avatarBg: "bg-gradient-to-tr from-[#FF6B00] to-[#FFAA00]",
-      avatarUrl: activeProfile === "S" ? sabaAvatar : ancyAvatar,
+      avatarUrl: activeProfile === "S" ? selfAvatar : partnerAvatar,
       locked: false,
       unlockedDayMin: 1,
       // Day 1–100 slides first, then streak recap
@@ -194,17 +228,17 @@ export function StoriesBar({ activeProfile, programDay, workoutStreak, profileNa
     },
     {
       id: "partner_progress",
-      title: isPartnerConnected ? (activeProfile === "S" ? "Ancy" : "Saba") : "Partner",
-      avatarText: activeProfile === "S" ? "A" : "S",
+      title: isPartnerConnected ? partnerName : "Partner",
+      avatarText: partnerLetter,
       avatarBg: "bg-gradient-to-tr from-purple-600 to-pink-500",
-      avatarUrl: activeProfile === "S" && isPartnerConnected ? ancyAvatar : activeProfile === "A" && isPartnerConnected ? sabaAvatar : null,
+      avatarUrl: activeProfile === "S" && isPartnerConnected ? partnerAvatar : activeProfile === "A" && isPartnerConnected ? selfAvatar : null,
       locked: !isPartnerConnected,
       unlockedDayMin: 1,
       slides: [
         {
           id: "pp_1",
           bgImage: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?q=80&w=1000&auto=format&fit=crop",
-          tag: `PARTNER ${activeProfile === "S" ? "ANCY" : "SABA"}`,
+          tag: `PARTNER ${isPartnerConnected ? partnerName.toUpperCase() : "PARTNER"}`,
           tagColor: "text-purple-400 bg-purple-500/15 border-purple-500/30",
           title: "STRONGER TOGETHER",
           quote: "Surround yourself with people on the same mission. When one rises, both win.",
@@ -711,7 +745,7 @@ export function StoriesBar({ activeProfile, programDay, workoutStreak, profileNa
                       </span>
                     )}
                     <span className={cn("font-display text-xs font-black uppercase tracking-widest px-3 py-1.5 rounded-full border backdrop-blur-md", activeSlide.tagColor)}>
-                      PROFILE {activeProfile}
+                      PROFILE {selfLetter}
                     </span>
                   </div>
                 </div>

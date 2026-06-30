@@ -135,7 +135,7 @@ export default async function DashboardPage() {
     ...profileRes.data,
     id: target.userId,
     program_start_date: memberProfileRes.data?.program_start_date || profileRes.data?.program_start_date || todayStr,
-    full_name: memberProfileRes.data?.full_name || profileRes.data?.full_name || (activeProfile === "S" ? "Saba" : "Ancy"),
+    full_name: memberProfileRes.data?.full_name || profileRes.data?.full_name || (target.userId === user.id ? "Self" : "Partner"),
   };
 
   return (

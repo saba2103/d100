@@ -56,6 +56,7 @@ export default function ProfilePage() {
   const [startingWeight, setStartingWeight] = useState("");
   const [startDate, setStartDate] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [displayTag, setDisplayTag] = useState("");
 
   // Goal Form Field States
   const [weightGoal, setWeightGoal] = useState("");
@@ -77,6 +78,7 @@ export default function ProfilePage() {
     weightGoal: "",
     bodyFatGoal: "",
     partnerEmail: "",
+    displayTag: "",
   });
 
   // Warnings & Modals
@@ -108,10 +110,10 @@ export default function ProfilePage() {
 
       const activeTag = (settingsData?.active_profile || activeProfile || "S") as "S" | "A";
 
-      // 1. Fetch main profiles row for partner email & self email
+      // 1. Fetch main profiles row for partner email, self email, and display name
       const { data: profileRow } = await (supabase
         .from("profiles")
-        .select("partner_email, email") as any)
+        .select("partner_email, email, display_name") as any)
         .eq("id", user.id)
         .single();
 
@@ -151,7 +153,7 @@ export default function ProfilePage() {
 
       // If it doesn't exist yet, insert a default row
       if (error && error.code === "PGRST116") {
-        const defaultName = activeTag === "S" ? "Saba" : "Ancy";
+        const defaultName = activeTag === "S" ? "Self" : "Partner";
         const { data: newRow } = await supabase
           .from("member_profiles")
           .insert({
@@ -176,6 +178,7 @@ export default function ProfilePage() {
           weightGoal: string;
           bodyFatGoal: string;
           partnerEmail: string;
+          displayTag: string;
         } = {
           fullName: memberProfile.full_name || "",
           phone: memberProfile.phone || "",
@@ -187,6 +190,7 @@ export default function ProfilePage() {
           weightGoal: memberProfile.current_weight_goal_kg ? String(memberProfile.current_weight_goal_kg) : "",
           bodyFatGoal: memberProfile.target_body_fat_pct ? String(memberProfile.target_body_fat_pct) : "",
           partnerEmail: pEmail,
+          displayTag: (profileRow as any)?.display_name || "",
         };
 
         setFullName(initialForm.fullName);
@@ -199,6 +203,7 @@ export default function ProfilePage() {
         setAvatarUrl(memberProfile.avatar_url || "");
         setWeightGoal(initialForm.weightGoal);
         setBodyFatGoal(initialForm.bodyFatGoal);
+        setDisplayTag(initialForm.displayTag);
 
         setOriginalValues(initialForm);
 
@@ -318,9 +323,10 @@ export default function ProfilePage() {
       startDate !== originalValues.startDate ||
       weightGoal !== originalValues.weightGoal ||
       bodyFatGoal !== originalValues.bodyFatGoal ||
-      partnerEmail !== originalValues.partnerEmail
+      partnerEmail !== originalValues.partnerEmail ||
+      displayTag !== originalValues.displayTag
     );
-  }, [fullName, phone, dob, gender, height, startingWeight, startDate, weightGoal, bodyFatGoal, partnerEmail, originalValues]);
+  }, [fullName, phone, dob, gender, height, startingWeight, startDate, weightGoal, bodyFatGoal, partnerEmail, displayTag, originalValues]);
 
   // Actions: Save Profile
   const handleSaveForm = async () => {
@@ -366,6 +372,7 @@ export default function ProfilePage() {
           current_weight_goal_kg: parsedWeightGoal,
           target_body_fat_pct: parsedFatGoal,
           partner_email: partnerEmail.trim() || null,
+          display_name: displayTag.trim() || null,
           updated_at: new Date().toISOString(),
         } as any) as any)
         .eq("id", user.id);
@@ -384,6 +391,7 @@ export default function ProfilePage() {
         weightGoal,
         bodyFatGoal,
         partnerEmail,
+        displayTag,
       });
 
       await refresh();
@@ -422,7 +430,7 @@ export default function ProfilePage() {
 
       // If it doesn't exist yet, insert a default row
       if (error && error.code === "PGRST116") {
-        const defaultName = nextProfile === "S" ? "Saba" : "Ancy";
+        const defaultName = nextProfile === "S" ? "Self" : "Partner";
         const { data: newRow } = await supabase
           .from("member_profiles")
           .insert({
@@ -440,7 +448,6 @@ export default function ProfilePage() {
         const { error: syncError } = await (supabase
           .from("profiles")
           .update({
-            display_name: nextProfile,
             full_name: targetProfile.full_name || "",
             phone: targetProfile.phone || null,
             height_cm: targetProfile.height_cm || null,
@@ -576,9 +583,9 @@ export default function ProfilePage() {
   }
 
   // Initials fallback calculations
-  const initials = activeProfile === "S" ? "S" : "A";
-  const activeProfileName = activeProfile === "S" ? "SABA" : "ANCY";
-  const otherProfileName = activeProfile === "S" ? "Ancy (A)" : "Saba (S)";
+  const initials = fullName ? fullName.trim().charAt(0).toUpperCase() : activeProfile;
+  const activeProfileName = fullName.toUpperCase() || (activeProfile === "S" ? "SELF" : "PARTNER");
+  const otherProfileName = activeProfile === "S" ? "Partner (A)" : "Self (S)";
 
   return (
     <div className="pb-28 pt-4 px-4 max-w-6xl mx-auto space-y-8">
@@ -728,6 +735,16 @@ export default function ProfilePage() {
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="Enter full name"
                 leftIcon={<User size={18} />}
+              />
+
+              {/* Profile Tag */}
+              <Input
+                label="Profile Tag"
+                value={displayTag}
+                maxLength={2}
+                onChange={(e) => setDisplayTag(e.target.value.toUpperCase())}
+                placeholder="e.g. S"
+                hint="Your display tag letter/initial (e.g. X)"
               />
 
               {/* Email (Read-only) */}

@@ -127,7 +127,7 @@ export default function DesignSystemPage() {
           <HeroCard>
             <h2 className="display-lg">Day Progress</h2>
             <p className="display-2xl mt-2">Day 43</p>
-            <p className="body-md text-white/90 mt-1">Keep pushing Saba, you are doing incredible!</p>
+            <p className="body-md text-white/90 mt-1">Keep pushing, you are doing incredible!</p>
           </HeroCard>
 
           <div className="grid grid-cols-1 gap-4">
@@ -331,7 +331,7 @@ export default function DesignSystemPage() {
       {/* Modal Element */}
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Verify Progress">
         <p className="body-md mb-4 text-[var(--text-secondary)]">
-          Are you sure you want to verify Saba's workout for Day 43? This will commit the workout log to Supabase.
+          Are you sure you want to verify this workout for Day 43? This will commit the workout log to Supabase.
         </p>
         <div className="flex justify-end gap-3 mt-6">
           <Button variant="ghost" size="sm" onClick={() => setIsModalOpen(false)}>Cancel</Button>

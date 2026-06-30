@@ -74,7 +74,6 @@ export default function SettingsPage() {
   // Settings & Profile loading states
   const [loadingSettings, setLoadingSettings] = useState(true);
   const [savingGoals, setSavingGoals] = useState(false);
-  const [savingAccount, setSavingAccount] = useState(false);
   const [savingNotifs, setSavingNotifs] = useState(false);
 
   // States: Push Notifications & Preferences
@@ -89,8 +88,6 @@ export default function SettingsPage() {
   const [caloriesGoal, setCaloriesGoal] = useState(2000);
 
   // States: Account
-  const [displayName, setDisplayName] = useState("");
-  const [startDate, setStartDate] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
 
   // Fetch initial settings & profile
@@ -121,17 +118,7 @@ export default function SettingsPage() {
           }
         }
 
-        // Fetch Profile details
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", user.id)
-          .single();
-
-        if (profile) {
-          setDisplayName(profile.display_name || "");
-          setStartDate(profile.program_start_date || "");
-        }
+        // Profile details query moved to Profile page
       } catch (err) {
         console.error("Failed to load settings data:", err);
       } finally {
@@ -207,36 +194,7 @@ export default function SettingsPage() {
     }
   };
 
-  // Actions: Account Save
-  const handleSaveAccount = async () => {
-    if (!userId) return;
-    setSavingAccount(true);
-    try {
-      const { error } = await supabase
-        .from("profiles")
-        .update({
-          display_name: displayName.trim(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", userId);
 
-      if (error) throw error;
-      
-      if (displayName.trim() === "S" || displayName.trim() === "A") {
-        await supabase
-          .from("user_settings")
-          .update({ active_profile: displayName.trim() as "S" | "A" })
-          .eq("user_id", userId);
-      }
-
-      alert("Account information updated successfully!");
-    } catch (err: any) {
-      console.error(err);
-      alert("Failed to update account: " + (err.message || err));
-    } finally {
-      setSavingAccount(false);
-    }
-  };
 
   // Actions: Sign out
   const handleSignOut = async () => {
@@ -523,7 +481,7 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* Column 3: Partner Sync (Saba <-> Ancy) */}
+          {/* Column 3: Partner Sync (Self <-> Partner) */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 border-b border-[#27272a]/60 pb-2">
               <Users size={18} className="text-purple-400" />
@@ -598,13 +556,13 @@ export default function SettingsPage() {
           </div>
         </Card>
 
-        {/* 4. Appearance & Account */}
+        {/* 4. Appearance */}
         <Card variant="surface" className="p-6 space-y-4 flex flex-col justify-between border-[#27272a]">
           <div className="space-y-4">
             <div className="flex items-center gap-2 border-b border-[#27272a] pb-3">
-              <User size={22} className="text-[var(--accent-text)]" />
+              <PaintBrush size={22} className="text-[var(--accent-text)]" />
               <h2 className="font-display text-lg tracking-wider text-[var(--text-primary)] uppercase">
-                Account &amp; Theme
+                Appearance
               </h2>
             </div>
 
@@ -634,34 +592,9 @@ export default function SettingsPage() {
                 ))}
               </div>
             </div>
-
-            {/* Display Name */}
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-body-bold text-[var(--text-muted)] uppercase tracking-wider block">
-                Profile Tag (S / A)
-              </label>
-              <input
-                type="text"
-                value={displayName}
-                maxLength={2}
-                onChange={(e) => setDisplayName(e.target.value.toUpperCase())}
-                placeholder="e.g. S"
-                className="w-full bg-[var(--bg-base)] border border-[#27272a] rounded-xl px-3.5 py-2.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-start)]/50 font-body"
-              />
-            </div>
           </div>
 
           <div className="flex flex-col gap-3 pt-4 border-t border-[#27272a]/40 mt-4">
-            <Button
-              fullWidth
-              variant="secondary"
-              disabled={savingAccount}
-              onClick={handleSaveAccount}
-              className="text-[10px] font-display uppercase tracking-widest font-black py-2.5"
-            >
-              {savingAccount ? "Saving..." : "Save Account Info"}
-            </Button>
-
             <Button
               fullWidth
               variant="ghost"
