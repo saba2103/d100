@@ -72,11 +72,36 @@ export default function DashboardClient({
   // States
   const [workoutLog, setWorkoutLog] = useState(initialWorkoutLog);
   const [supplementLogId, setSupplementLogId] = useState(initialSupplementLog?.id || null);
-  const [supplementList, setSupplementList] = useState<string[]>(() => {
-    if (initialSupplementLog?.supplements) {
-      return (initialSupplementLog.supplements as any[]).map((s) => s.name);
-    }
-    return [];
+  const [supplements, setSupplements] = useState<any[]>(() => {
+    const items = initialSupplementLog?.supplements
+      ? [...(initialSupplementLog.supplements as any[])]
+      : [];
+      
+    // Ensure all coach supplements are present
+    COACH_SUPPLEMENT_PLAN.forEach(coach => {
+      const existing = items.find(i => i.name === coach.name);
+      if (!existing) {
+        items.push({
+          name: coach.name,
+          dose: coach.dose,
+          timing: coach.timing || "",
+          custom: false,
+          taken: false,
+        });
+      } else {
+        if (existing.taken === undefined) {
+          existing.taken = true;
+        }
+      }
+    });
+
+    items.forEach(item => {
+      if (item.taken === undefined) {
+        item.taken = true;
+      }
+    });
+
+    return items;
   });
 
   // Modal States
@@ -189,30 +214,29 @@ export default function DashboardClient({
   const handleSupplementToggle = async (suppName: string) => {
     if (isReadOnly) return;
     const supabase = createClient();
-    const isChecking = !supplementList.includes(suppName);
+    const isChecking = supplements.find(item => item.name === suppName)?.taken === false;
     if (isChecking) {
       setLastCheckedSupp(suppName);
       setTimeout(() => setLastCheckedSupp(null), 500);
     }
-    const updatedList = supplementList.includes(suppName)
-      ? supplementList.filter((s) => s !== suppName)
-      : [...supplementList, suppName];
-
-    setSupplementList(updatedList);
-
-    const payload = updatedList.map((name) => {
-      const info = DEFAULT_SUPPLEMENTS.find(s => s.name === name);
-      return {
-        name,
-        dose: info?.dose || "1 serving",
-        taken_at: new Date().toISOString(),
-      };
+    const updated = supplements.map(item => {
+      if (item.name === suppName) {
+        const nextTaken = !item.taken;
+        return {
+          ...item,
+          taken: nextTaken,
+          taken_at: nextTaken ? new Date().toISOString() : undefined,
+        };
+      }
+      return item;
     });
+
+    setSupplements(updated);
 
     if (supplementLogId) {
       await supabase
         .from("supplement_logs")
-        .update({ supplements: payload })
+        .update({ supplements: updated })
         .eq("id", supplementLogId);
     } else {
       const { data, error } = await supabase
@@ -220,7 +244,7 @@ export default function DashboardClient({
         .insert({
           user_id: profile.id,
           logged_at: today,
-          supplements: payload,
+          supplements: updated,
           profile_tag: activeProfileTag,
         })
         .select()
@@ -229,6 +253,18 @@ export default function DashboardClient({
         setSupplementLogId(data.id);
       }
     }
+
+    if (updated.length > 0 && updated.every((s) => s.taken)) {
+      fetch("/api/events/log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventType: "supplements_checked",
+          profileTag: activeProfileTag,
+        }),
+      }).catch(() => {});
+    }
+
     await triggerBadgeCheck();
     router.refresh();
   };
@@ -592,13 +628,13 @@ export default function DashboardClient({
                 DAILY SUPPLEMENTS
               </h2>
               <span className="text-xs font-body font-body-bold text-[var(--accent-text)]">
-                {supplementList.filter(name => DEFAULT_SUPPLEMENTS.some(d => d.name === name)).length}/{DEFAULT_SUPPLEMENTS.length} Done
+                {supplements.filter(s => s.taken).length}/{supplements.length} Done
               </span>
             </div>
 
             <div className="space-y-2">
-              {DEFAULT_SUPPLEMENTS.map((supp) => {
-                const isChecked = supplementList.includes(supp.name);
+              {supplements.map((supp) => {
+                const isChecked = supp.taken;
                 return (
                   <button
                     key={supp.name}
