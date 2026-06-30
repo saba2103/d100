@@ -22,6 +22,7 @@ interface UserContextType {
   activeProfile: "S" | "A";
   setActiveProfile: (profile: "S" | "A") => Promise<void>;
   loading: boolean;
+  isPartnerConnected: boolean;
   refresh: () => Promise<void>;
 }
 
@@ -101,6 +102,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<UserSettings | null>(null);
   const [activeProfile, setActiveProfileState] = useState<"S" | "A">("S");
   const [loading, setLoading] = useState(true);
+  const [isPartnerConnected, setIsPartnerConnected] = useState(false);
 
   const fetchSettings = useCallback(async (userId: string) => {
     const supabase = createClient();
@@ -114,6 +116,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setSettings(data);
       if (data.active_profile === "S" || data.active_profile === "A") {
         setActiveProfileState(data.active_profile);
+      }
+
+      // Check partner connection (two-way link)
+      const { data: myProfile } = await (supabase as any)
+        .from("profiles")
+        .select("email, partner_email")
+        .eq("id", userId)
+        .single();
+
+      if (myProfile?.partner_email) {
+        const partnerEmail = (myProfile.partner_email as string).trim().toLowerCase();
+        const { data: partnerProfile } = await (supabase as any)
+          .from("profiles")
+          .select("email, partner_email")
+          .eq("email", partnerEmail)
+          .maybeSingle();
+
+        const selfEmail = (myProfile.email as string)?.trim().toLowerCase();
+        const partnerLinksBack = (partnerProfile?.partner_email as string)?.trim().toLowerCase() === selfEmail;
+        setIsPartnerConnected(!!(partnerProfile && partnerLinksBack));
+      } else {
+        setIsPartnerConnected(false);
       }
     } else if (error && error.code === "PGRST116") {
       // Row not found, create default settings
@@ -206,6 +230,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         activeProfile,
         setActiveProfile,
         loading: authLoading || loading,
+        isPartnerConnected,
         refresh,
       }}
     >

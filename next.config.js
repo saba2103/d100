@@ -40,6 +40,12 @@ const withPWA = require("@ducanh2912/next-pwa").default({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Raise global API body-size limit to handle base64-encoded image/PDF uploads
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "20mb",
+    },
+  },
 };
 
 module.exports = withPWA(nextConfig);

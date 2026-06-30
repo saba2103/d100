@@ -195,11 +195,30 @@ export function LogMeasurementClient({ userId, editId }: Props) {
         name: item.file.name,
       }));
 
+      // Rough size estimate — base64 is ~1.33× raw size
+      const totalBytes = payloadFiles.reduce((sum, f) => sum + f.dataUrl.length, 0);
+      const totalMB = totalBytes / 1024 / 1024;
+      if (totalMB > 18) {
+        throw new Error(
+          `Files are too large (${totalMB.toFixed(1)} MB combined). Please remove some files and try again with fewer or smaller screenshots.`
+        );
+      }
+
       const res = await fetch("/api/body-stats/parse", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ files: payloadFiles }),
       });
+
+      // Guard against non-JSON responses (e.g. "Request Entity Too Large")
+      const contentType = res.headers.get("content-type") || "";
+      if (!contentType.includes("application/json")) {
+        const text = await res.text();
+        if (res.status === 413 || text.toLowerCase().includes("entity too large")) {
+          throw new Error("Files are too large. Please use fewer screenshots or a smaller PDF.");
+        }
+        throw new Error(`Server error (${res.status}): ${text.slice(0, 120)}`);
+      }
 
       const json = await res.json();
       if (!res.ok || json.error) {

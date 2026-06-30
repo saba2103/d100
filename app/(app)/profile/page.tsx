@@ -806,8 +806,21 @@ export default function ProfilePage() {
                 value={partnerEmail}
                 onChange={(e) => setPartnerEmail(e.target.value)}
                 placeholder="partner@example.com"
-                hint="Enter partner's registered email to link accounts and sync stats."
+                hint={
+                  partnerConnectionStatus === "connected"
+                    ? "Partner connected — you can view each other's stats."
+                    : partnerConnectionStatus === "awaiting"
+                    ? "Awaiting partner to add your email on their end."
+                    : "Enter partner's registered email to link accounts and sync stats."
+                }
                 leftIcon={<Envelope size={18} />}
+                rightIcon={
+                  partnerConnectionStatus === "connected" ? (
+                    <CheckCircle size={18} weight="fill" className="text-emerald-400" />
+                  ) : partnerConnectionStatus === "awaiting" ? (
+                    <Warning size={18} weight="fill" className="text-amber-400 animate-pulse" />
+                  ) : null
+                }
               />
             </div>
 
