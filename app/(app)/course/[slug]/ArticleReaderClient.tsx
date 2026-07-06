@@ -287,6 +287,24 @@ export function ArticleReaderClient({
                     {block.text || "📋 Coach"}
                   </span>
                 );
+              case "video":
+                return (
+                  <div key={index} className="my-6 overflow-hidden rounded-2xl border border-[#27272a] bg-[#18181b] shadow-lg">
+                    <video
+                      src={block.url}
+                      controls
+                      playsInline
+                      className="w-full aspect-video object-cover"
+                    />
+                    {block.caption && (
+                      <div className="p-3 bg-[#09090b]/80 border-t border-[#27272a] text-center">
+                        <p className="font-body text-[10px] text-[var(--text-secondary)] italic">
+                          {block.caption}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                );
               default:
                 return null;
             }

@@ -21,7 +21,7 @@ export function BottomNav() {
 
   // Active route helpers
   const isHomeActive = pathname === "/dashboard";
-  const isTrackActive = ["/workout", "/steps", "/nutrition", "/water", "/supplements", "/body-stats", "/badges"].some(
+  const isTrackActive = ["/workout", "/steps", "/nutrition", "/water", "/supplements", "/body-stats", "/badges", "/calculator"].some(
     (route) => pathname === route || pathname.startsWith(route + "/")
   );
   const isJourneyActive = pathname === "/journey" || pathname.startsWith("/journey/");

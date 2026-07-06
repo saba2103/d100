@@ -45,26 +45,7 @@ interface ExerciseItem {
   sets: SetRow[];
 }
 
-import { COACH_WORKOUT_PLAN } from "@/lib/workoutPlan";
-
-const PHASE1_PLAN: any[] = COACH_WORKOUT_PLAN;
-
-const WARM_UP_EXERCISES = [
-  "3 min light cardio (treadmill/cross trainer)",
-  "Arm circles — 15 each direction",
-  "Band pull-aparts — 15 reps",
-  "Push-ups — 10–15 reps (slow, controlled)",
-  "Light lateral raises — 15 reps",
-  "1 warm-up set of first exercise at 50% weight"
-];
-
-const COOL_DOWN_EXERCISES = [
-  "Chest stretch (doorway) — 30 sec each side",
-  "Overhead tricep stretch — 30 sec each arm",
-  "Cross-body shoulder stretch — 30 sec each arm",
-  "Chest opener (hands clasped behind back) — 30 sec",
-  "Neck rolls — 30 sec"
-];
+import { COACH_WORKOUT_PLAN, getWorkoutPlanForDay, getWarmUpAndCoolDown } from "@/lib/workoutPlan";
 
 export function ActiveWorkoutClient({
   profile,
@@ -77,10 +58,19 @@ export function ActiveWorkoutClient({
   const { activeProfile } = useAppUser();
 
   // Stopwatch States
-  const [secondsElapsed, setSecondsElapsed] = useState(() => 
-    isEditing && currentWorkout?.duration_minutes ? currentWorkout.duration_minutes * 60 : 0
-  );
-  const [timerActive, setTimerActive] = useState(() => !isEditing);
+  const [secondsElapsed, setSecondsElapsed] = useState<number>(0);
+  const [timerActive, setTimerActive] = useState<boolean>(false);
+  const [autosaveStatus, setAutosaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('saved');
+  const [workoutLogId, setWorkoutLogId] = useState<string | null>(() => currentWorkout?.id || null);
+
+  const timerStateKey = `workout_timer_state_${targetDate}`;
+
+  // Keep workoutLogId in sync with currentWorkout.id if editing
+  useEffect(() => {
+    if (currentWorkout?.id) {
+      setWorkoutLogId(currentWorkout.id);
+    }
+  }, [currentWorkout?.id]);
 
   // Rest Timer States
   const [restTimeLeft, setRestTimeLeft] = useState<number | null>(null);
@@ -90,36 +80,6 @@ export function ActiveWorkoutClient({
   const [isDiscardModalOpen, setIsDiscardModalOpen] = useState(false);
   const [isAddExerciseModalOpen, setIsAddExerciseModalOpen] = useState(false);
   const [newExerciseName, setNewExerciseName] = useState("");
-
-  // Warm-up and Cool-down checked states
-  const [saving, setSaving] = useState(false);
-  const [completedWarmUp, setCompletedWarmUp] = useState<boolean[]>(() => {
-    if (isEditing && currentWorkout?.notes) {
-      try {
-        const parsed = JSON.parse(currentWorkout.notes);
-        if (Array.isArray(parsed.warmup) && parsed.warmup.length === WARM_UP_EXERCISES.length) {
-          return parsed.warmup;
-        }
-      } catch (e) {
-        // Fallback
-      }
-    }
-    return Array(WARM_UP_EXERCISES.length).fill(false);
-  });
-
-  const [completedCoolDown, setCompletedCoolDown] = useState<boolean[]>(() => {
-    if (isEditing && currentWorkout?.notes) {
-      try {
-        const parsed = JSON.parse(currentWorkout.notes);
-        if (Array.isArray(parsed.cooldown) && parsed.cooldown.length === COOL_DOWN_EXERCISES.length) {
-          return parsed.cooldown;
-        }
-      } catch (e) {
-        // Fallback
-      }
-    }
-    return Array(COOL_DOWN_EXERCISES.length).fill(false);
-  });
 
   const programDay = React.useMemo(() => {
     if (!profile?.program_start_date) return 1;
@@ -131,7 +91,92 @@ export function ActiveWorkoutClient({
     return Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1;
   }, [profile?.program_start_date, targetDate]);
 
-  const showCoachPlan = programDay >= 1 && programDay <= 6;
+  const coachPlan = getWorkoutPlanForDay(programDay);
+  const showCoachPlan = coachPlan !== null;
+
+  // Resolve dynamic warmup/cooldown steps
+  const { warmupSteps, cooldownStretches } = React.useMemo(() => {
+    const plan = coachPlan || { name: "PUSH" };
+    const { warmup, cooldown } = getWarmUpAndCoolDown(plan.name);
+    return {
+      warmupSteps: warmup.map((w) => `${w.text} (${w.detail})`),
+      cooldownStretches: cooldown.map((c) => `${c.text} (${c.detail})`),
+    };
+  }, [coachPlan]);
+
+  // Warm-up and Cool-down checked states
+  const [saving, setSaving] = useState(false);
+  const [completedWarmUp, setCompletedWarmUp] = useState<boolean[]>(() => {
+    if (isEditing && currentWorkout?.notes) {
+      try {
+        const parsed = JSON.parse(currentWorkout.notes);
+        if (Array.isArray(parsed.warmup)) {
+          return parsed.warmup;
+        }
+      } catch (e) {
+        // Fallback
+      }
+    }
+    // Dynamic lookup for default length
+    const initialDay = (() => {
+      if (!profile?.program_start_date) return 1;
+      const start = new Date(profile.program_start_date);
+      start.setHours(0, 0, 0, 0);
+      const target = new Date(targetDate);
+      target.setHours(0, 0, 0, 0);
+      return Math.round((target.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    })();
+    const plan = getWorkoutPlanForDay(initialDay);
+    const { warmup } = getWarmUpAndCoolDown(plan ? plan.name : "PUSH");
+    return Array(warmup.length).fill(false);
+  });
+
+  const [completedCoolDown, setCompletedCoolDown] = useState<boolean[]>(() => {
+    if (isEditing && currentWorkout?.notes) {
+      try {
+        const parsed = JSON.parse(currentWorkout.notes);
+        if (Array.isArray(parsed.cooldown)) {
+          return parsed.cooldown;
+        }
+      } catch (e) {
+        // Fallback
+      }
+    }
+    const initialDay = (() => {
+      if (!profile?.program_start_date) return 1;
+      const start = new Date(profile.program_start_date);
+      start.setHours(0, 0, 0, 0);
+      const target = new Date(targetDate);
+      target.setHours(0, 0, 0, 0);
+      return Math.round((target.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    })();
+    const plan = getWorkoutPlanForDay(initialDay);
+    const { cooldown } = getWarmUpAndCoolDown(plan ? plan.name : "PUSH");
+    return Array(cooldown.length).fill(false);
+  });
+
+  // Keep checkmark states in sync with list length transitions
+  useEffect(() => {
+    setCompletedWarmUp(prev => {
+      if (prev.length === warmupSteps.length) return prev;
+      const next = [...prev];
+      if (next.length < warmupSteps.length) {
+        return [...next, ...Array(warmupSteps.length - next.length).fill(false)];
+      }
+      return next.slice(0, warmupSteps.length);
+    });
+  }, [warmupSteps.length]);
+
+  useEffect(() => {
+    setCompletedCoolDown(prev => {
+      if (prev.length === cooldownStretches.length) return prev;
+      const next = [...prev];
+      if (next.length < cooldownStretches.length) {
+        return [...next, ...Array(cooldownStretches.length - next.length).fill(false)];
+      }
+      return next.slice(0, cooldownStretches.length);
+    });
+  }, [cooldownStretches.length]);
 
   // Exercises State
   const [exercises, setExercises] = useState<ExerciseItem[]>(() => {
@@ -146,9 +191,9 @@ export function ActiveWorkoutClient({
       }));
     }
 
-    if (showCoachPlan && PHASE1_PLAN.length > 0) {
-      // Default to Phase 1 Coach Plan
-      return PHASE1_PLAN.map((p) => ({
+    if (showCoachPlan && coachPlan) {
+      // Default to Coach Plan
+      return coachPlan.exercises.map((p) => ({
         name: p.name,
         sets: Array.from({ length: p.sets }, () => ({
           reps: p.reps,
@@ -173,16 +218,182 @@ export function ActiveWorkoutClient({
     }
   }, [lastWorkout]);
 
+  // Load timer state from localStorage on mount
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const savedTimer = localStorage.getItem(timerStateKey);
+    let initialSeconds = isEditing && currentWorkout?.duration_minutes ? currentWorkout.duration_minutes * 60 : 0;
+    let initialActive = !isEditing;
+
+    if (savedTimer) {
+      try {
+        const parsed = JSON.parse(savedTimer);
+        initialActive = parsed.timerActive;
+        if (parsed.timerActive && parsed.startTime) {
+          const now = Date.now();
+          initialSeconds = parsed.accumulatedSeconds + Math.floor((now - parsed.startTime) / 1000);
+        } else {
+          initialSeconds = parsed.accumulatedSeconds;
+        }
+      } catch (e) {
+        console.error("Error loading saved timer", e);
+      }
+    } else {
+      // Create initial local storage timer state
+      const initialStore = {
+        startTime: initialActive ? Date.now() : null,
+        accumulatedSeconds: initialSeconds,
+        timerActive: initialActive
+      };
+      localStorage.setItem(timerStateKey, JSON.stringify(initialStore));
+    }
+
+    setSecondsElapsed(initialSeconds);
+    setTimerActive(initialActive);
+  }, []);
+
+  // Track secondsElapsed in a ref so we can query it without subscribing to its frequent changes
+  const secondsElapsedRef = useRef(secondsElapsed);
+  useEffect(() => {
+    secondsElapsedRef.current = secondsElapsed;
+  }, [secondsElapsed]);
+
   // Stopwatch Effect
   useEffect(() => {
     let interval: any = null;
     if (timerActive) {
       interval = setInterval(() => {
-        setSecondsElapsed((prev) => prev + 1);
+        setSecondsElapsed((prev) => {
+          const next = prev + 1;
+          // Periodically save to localStorage to persist accumulated seconds in case of sudden tab close
+          if (typeof window !== "undefined") {
+            const savedTimer = localStorage.getItem(timerStateKey);
+            if (savedTimer) {
+              try {
+                const parsed = JSON.parse(savedTimer);
+                localStorage.setItem(
+                  timerStateKey,
+                  JSON.stringify({
+                    startTime: parsed.startTime || Date.now(),
+                    accumulatedSeconds: next,
+                    timerActive: true,
+                  })
+                );
+              } catch (e) {}
+            }
+          }
+          return next;
+        });
       }, 1000);
     }
     return () => clearInterval(interval);
   }, [timerActive]);
+
+  // Toggle Timer Handler
+  const toggleTimer = () => {
+    setTimerActive((prevActive) => {
+      const nextActive = !prevActive;
+      if (typeof window !== "undefined") {
+        const now = Date.now();
+        if (nextActive) {
+          localStorage.setItem(
+            timerStateKey,
+            JSON.stringify({
+              startTime: now,
+              accumulatedSeconds: secondsElapsed,
+              timerActive: true,
+            })
+          );
+        } else {
+          localStorage.setItem(
+            timerStateKey,
+            JSON.stringify({
+              startTime: null,
+              accumulatedSeconds: secondsElapsed,
+              timerActive: false,
+            })
+          );
+        }
+      }
+      return nextActive;
+    });
+  };
+
+  // Real-time Autosave Effect
+  const isInitialMount = useRef(true);
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    setAutosaveStatus('saving');
+
+    const timer = setTimeout(async () => {
+      const supabase = createClient();
+
+      const payloadExercises = exercises.map((ex) => ({
+        name: ex.name,
+        sets: ex.sets.map((s) => ({
+          reps: parseInt(s.reps, 10) || 0,
+          weight_kg: parseFloat(s.weight_kg) || 0,
+          completed: s.completed,
+        })),
+      }));
+
+      const duration = Math.ceil(secondsElapsedRef.current / 60);
+      const notesPayload = JSON.stringify({
+        warmup: completedWarmUp,
+        cooldown: completedCoolDown,
+      });
+
+      try {
+        let error = null;
+        if (workoutLogId) {
+          const { error: err } = await supabase
+            .from("workout_logs")
+            .update({
+              exercises: payloadExercises,
+              duration_minutes: duration,
+              notes: notesPayload,
+            })
+            .eq("id", workoutLogId);
+          error = err;
+        } else {
+          const { data, error: err } = await supabase
+            .from("workout_logs")
+            .insert({
+              user_id: profile.id,
+              logged_at: targetDate,
+              phase: 2,
+              exercises: payloadExercises,
+              duration_minutes: duration,
+              notes: notesPayload,
+              profile_tag: activeProfile,
+            })
+            .select("id")
+            .single();
+          error = err;
+          if (!error && data?.id) {
+            setWorkoutLogId(data.id);
+          }
+        }
+
+        if (error) {
+          console.error("Autosave database error:", error);
+          setAutosaveStatus('error');
+        } else {
+          setAutosaveStatus('saved');
+        }
+      } catch (e) {
+        console.error("Autosave exception:", e);
+        setAutosaveStatus('error');
+      }
+    }, 1500); // 1.5 seconds debounce
+
+    return () => clearTimeout(timer);
+  }, [exercises, completedWarmUp, completedCoolDown]);
 
   // Rest Timer Effect
   useEffect(() => {
@@ -200,6 +411,41 @@ export function ActiveWorkoutClient({
     }
     return () => clearInterval(interval);
   }, [restTimeLeft]);
+
+  // Screen Wake Lock to prevent screen dimming/lock during active workout
+  useEffect(() => {
+    let wakeLock: any = null;
+
+    const requestWakeLock = async () => {
+      if (typeof window === "undefined" || !("wakeLock" in navigator)) return;
+      try {
+        wakeLock = await (navigator as any).wakeLock.request("screen");
+        console.log("Wake Lock successfully activated");
+      } catch (err: any) {
+        console.warn(`Wake Lock activation failed: ${err.message}`);
+      }
+    };
+
+    requestWakeLock();
+
+    // Re-request wake lock when screen is unlocked or visibility returns to normal
+    const handleVisibilityChange = async () => {
+      if (wakeLock !== null && document.visibilityState === "visible") {
+        await requestWakeLock();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      if (wakeLock !== null) {
+        wakeLock.release().then(() => {
+          wakeLock = null;
+        }).catch(() => {});
+      }
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
 
   const formatStopwatch = (totalSecs: number) => {
     const mins = Math.floor(totalSecs / 60);
@@ -333,7 +579,8 @@ export function ActiveWorkoutClient({
     });
 
     let dbRes;
-    if (isEditing && currentWorkout?.id) {
+    const activeId = workoutLogId || currentWorkout?.id;
+    if (activeId) {
       dbRes = await supabase
         .from("workout_logs")
         .update({
@@ -341,32 +588,25 @@ export function ActiveWorkoutClient({
           duration_minutes: duration,
           notes: notesPayload,
         })
-        .eq("id", currentWorkout.id);
+        .eq("id", activeId);
     } else {
-      // Upsert check for current date
-      if (currentWorkout?.id) {
-        dbRes = await supabase
-          .from("workout_logs")
-          .update({
-            exercises: payloadExercises,
-            duration_minutes: duration,
-            notes: notesPayload,
-          })
-          .eq("id", currentWorkout.id);
-      } else {
-        dbRes = await supabase.from("workout_logs").insert({
-          user_id: profile.id,
-          logged_at: targetDate,
-          phase: 1, // Phase 1 default
-          exercises: payloadExercises,
-          duration_minutes: duration,
-          notes: notesPayload,
-          profile_tag: activeProfile,
-        });
-      }
+      dbRes = await supabase.from("workout_logs").insert({
+        user_id: profile.id,
+        logged_at: targetDate,
+        phase: 2,
+        exercises: payloadExercises,
+        duration_minutes: duration,
+        notes: notesPayload,
+        profile_tag: activeProfile,
+      });
     }
 
     if (!dbRes.error) {
+      // Clear local storage timer state
+      if (typeof window !== "undefined") {
+        localStorage.removeItem(timerStateKey);
+      }
+
       fetch("/api/events/log", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -397,12 +637,6 @@ export function ActiveWorkoutClient({
             <span className="font-display text-2xl font-black text-[var(--text-primary)] leading-none select-none">
               {formatStopwatch(secondsElapsed)}
             </span>
-            <button
-              onClick={() => setTimerActive(!timerActive)}
-              className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] ml-1"
-            >
-              {timerActive ? <Pause size={14} /> : <Play size={14} />}
-            </button>
           </div>
         ) : (
           <div className="flex items-center gap-2">
@@ -442,9 +676,18 @@ export function ActiveWorkoutClient({
             </button>
           </motion.div>
         ) : (
-          <span className="text-[10px] text-[var(--text-muted)] font-body uppercase">
-            Active Log
-          </span>
+          <div className="flex items-center gap-1.5">
+            <span className={cn(
+              "text-[10px] font-body uppercase font-bold tracking-wider px-2 py-0.5 rounded-full",
+              autosaveStatus === 'saving' && "bg-[var(--accent-start)]/10 text-[var(--accent-text)] animate-pulse",
+              autosaveStatus === 'saved' && "bg-[var(--green)]/10 text-[var(--green)]",
+              autosaveStatus === 'error' && "bg-[var(--red)]/10 text-[var(--red)]"
+            )}>
+              {autosaveStatus === 'saving' && "• Syncing..."}
+              {autosaveStatus === 'saved' && "✓ Synced"}
+              {autosaveStatus === 'error' && "✗ Sync Error"}
+            </span>
+          </div>
         )}
 
         <div className="flex gap-2">
@@ -468,18 +711,18 @@ export function ActiveWorkoutClient({
       </div>
 
       {/* Warm-Up Card */}
-      {showCoachPlan && PHASE1_PLAN.length > 0 && (
+      {showCoachPlan && coachPlan && coachPlan.exercises.length > 0 && (
         <Card variant="surface" className="p-5 bg-[#18181b] border border-[#27272a] space-y-4">
           <div className="flex items-center justify-between border-b border-[#27272a] pb-3">
             <h3 className="font-display text-sm font-black text-[var(--accent-text)] uppercase tracking-wider flex items-center gap-2">
               <span>🔥</span> WARM-UP PROTOCOL
             </h3>
             <span className="text-[10px] font-body-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[var(--accent-start)]/10 text-[var(--accent-text)]">
-              ~6 Mins • Tap to Check
+              ~{coachPlan.name.toUpperCase().includes("LEG") ? "7–10" : "5–7"} Mins • Tap to Check
             </span>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-            {WARM_UP_EXERCISES.map((exercise, index) => {
+            {warmupSteps.map((exercise, index) => {
               const isChecked = completedWarmUp[index];
               const numStr = String(index + 1).padStart(2, '0');
               return (
@@ -535,7 +778,7 @@ export function ActiveWorkoutClient({
                     {ex.name}
                   </h3>
                   {(() => {
-                    const planItem = PHASE1_PLAN.find((p) => p.name === ex.name);
+                    const planItem = coachPlan?.exercises.find((p) => p.name === ex.name);
                     if (planItem && showCoachPlan) {
                       return (
                         <span className="inline-block mt-0.5 px-2 py-0.5 rounded-full text-[9px] font-body bg-[rgba(249,115,22,0.08)] text-[var(--accent-text)] border border-[rgba(249,115,22,0.15)]">
@@ -547,7 +790,7 @@ export function ActiveWorkoutClient({
                   })()}
                 </div>
 
-                {!PHASE1_PLAN.some((p) => p.name === ex.name && showCoachPlan) && (
+                {!(coachPlan?.exercises.some((p) => p.name === ex.name) && showCoachPlan) && (
                   <button
                     onClick={() => handleRemoveExercise(exIdx)}
                     className="p-1 text-[var(--text-muted)] hover:text-[var(--red)] transition-colors"
@@ -666,7 +909,7 @@ export function ActiveWorkoutClient({
         })}
 
         {/* Cool-Down Card */}
-        {showCoachPlan && PHASE1_PLAN.length > 0 && (
+        {showCoachPlan && coachPlan && coachPlan.exercises.length > 0 && (
           <Card variant="surface" className="p-5 bg-[#18181b] border border-[#27272a] space-y-4">
             <div className="flex items-center justify-between border-b border-[#27272a] pb-3">
               <h3 className="font-display text-sm font-black text-[var(--blue)] uppercase tracking-wider flex items-center gap-2">
@@ -677,7 +920,7 @@ export function ActiveWorkoutClient({
               </span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-              {COOL_DOWN_EXERCISES.map((exercise, index) => {
+              {cooldownStretches.map((exercise, index) => {
                 const isChecked = completedCoolDown[index];
                 const numStr = String(index + 1).padStart(2, '0');
                 return (
@@ -795,9 +1038,18 @@ export function ActiveWorkoutClient({
             <Button
               className="flex-1"
               variant="danger"
-              onClick={() => {
+              onClick={async () => {
                 setIsDiscardModalOpen(false);
+                if (typeof window !== "undefined") {
+                  localStorage.removeItem(timerStateKey);
+                }
+                const activeId = workoutLogId || currentWorkout?.id;
+                if (activeId) {
+                  const supabase = createClient();
+                  await supabase.from("workout_logs").delete().eq("id", activeId);
+                }
                 router.push("/workout");
+                router.refresh();
               }}
             >
               Discard Log

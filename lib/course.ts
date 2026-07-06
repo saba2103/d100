@@ -8,6 +8,7 @@ export type BlockType =
   | "divider"
   | "quote"
   | "image"
+  | "video"
   | "phase_tag";
 
 export interface ContentBlock {
@@ -136,7 +137,134 @@ export const COURSE_PHASES: CoursePhase[] = [
     id: 2,
     name: "Phase 2 | BUILDING THE BASE | Day (8-35)",
     locked: false,
-    lessons: [],
+    lessons: [
+      {
+        lesson_number: "2.1",
+        title: "Goal & Duration Of This Phase",
+        slug: "phase-2-goal-duration",
+        estimated_read_minutes: 5,
+        published: true,
+      },
+      {
+        lesson_number: "2.2",
+        title: "Nutrition Plan For This Phase",
+        slug: "phase-2-nutrition-plan",
+        estimated_read_minutes: 8,
+        published: true,
+      },
+      {
+        lesson_number: "2.3",
+        title: "Calorie & Macro Calculation",
+        slug: "phase-2-calorie-macro",
+        estimated_read_minutes: 6,
+        published: true,
+      },
+      {
+        lesson_number: "2.4",
+        title: "Workout Plan For This Phase",
+        slug: "phase-2-workout-plan",
+        estimated_read_minutes: 7,
+        published: true,
+      },
+      {
+        lesson_number: "2.5",
+        title: "Introduction To Workout Split",
+        slug: "phase-2-workout-split",
+        estimated_read_minutes: 5,
+        published: true,
+      },
+      {
+        lesson_number: "2.6",
+        title: "Pull Day Demonstration",
+        slug: "phase-2-pull-day",
+        estimated_read_minutes: 10,
+        published: true,
+      },
+      {
+        lesson_number: "2.7",
+        title: "Push Day Demonstration",
+        slug: "phase-2-push-day",
+        estimated_read_minutes: 10,
+        published: true,
+      },
+      {
+        lesson_number: "2.8",
+        title: "Leg Day Demonstration",
+        slug: "phase-2-leg-day",
+        estimated_read_minutes: 10,
+        published: true,
+      },
+      {
+        lesson_number: "2.9",
+        title: "Summary of the Workout Split",
+        slug: "phase-2-workout-summary",
+        estimated_read_minutes: 5,
+        published: true,
+      },
+      {
+        lesson_number: "2.10",
+        title: "Supplements For This Phase",
+        slug: "phase-2-supplements",
+        estimated_read_minutes: 5,
+        published: true,
+      },
+      {
+        lesson_number: "2.11",
+        title: "Mistakes To Avoid",
+        slug: "phase-2-mistakes",
+        estimated_read_minutes: 5,
+        published: true,
+      },
+      {
+        lesson_number: "2.12",
+        title: "Action Plan",
+        slug: "phase-2-action-plan",
+        estimated_read_minutes: 5,
+        published: true,
+      },
+      {
+        lesson_number: "2.a",
+        title: "Phase 2 Workout Plan — Quick Reference",
+        slug: "phase-2-workout-reference",
+        estimated_read_minutes: 5,
+        published: true,
+      },
+      {
+        lesson_number: "2.b",
+        title: "Phase 2 Abs Workout Guide — Quick Reference",
+        slug: "phase-2-abs-reference",
+        estimated_read_minutes: 5,
+        published: true,
+      },
+      {
+        lesson_number: "2.c",
+        title: "Phase 2 Calorie & Macro Calculator — Quick Reference",
+        slug: "phase-2-calculator-reference",
+        estimated_read_minutes: 5,
+        published: true,
+      },
+      {
+        lesson_number: "2.d",
+        title: "Phase 2 Veg Diet Plan — Quick Reference",
+        slug: "phase-2-veg-diet-reference",
+        estimated_read_minutes: 5,
+        published: true,
+      },
+      {
+        lesson_number: "2.e",
+        title: "Phase 2 Eggetarian Diet Plan — Quick Reference",
+        slug: "phase-2-eggetarian-diet-reference",
+        estimated_read_minutes: 5,
+        published: true,
+      },
+      {
+        lesson_number: "2.f",
+        title: "Phase 2 Non-Veg Diet Plan — Quick Reference",
+        slug: "phase-2-nonveg-diet-reference",
+        estimated_read_minutes: 5,
+        published: true,
+      },
+    ],
   },
   {
     id: 3,

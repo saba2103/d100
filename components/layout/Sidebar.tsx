@@ -20,6 +20,7 @@ import {
   Compass,
   Bell,
   MapTrifold,
+  Calculator,
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils/cn";
 import { useAppUser } from "@/lib/contexts/AppContext";
@@ -58,6 +59,7 @@ const NAV_SECTIONS: NavSection[] = [
       { href: "/supplements", label: "Supplements", icon: Sparkle },
       { href: "/body-stats", label: "Body Stats", icon: ChartLineUp },
       { href: "/badges", label: "Achievements", icon: Trophy },
+      { href: "/calculator", label: "Calculator", icon: Calculator },
     ],
   },
   {

@@ -753,6 +753,14 @@ export function NutritionClient({ profile, settings, initialLogs, initialDailySt
             {formattedDate}
           </p>
         </div>
+
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => router.push("/nutrition/diet")}
+        >
+          📋 Diet Plan
+        </Button>
       </div>
 
       {/* Timeline Calendar */}

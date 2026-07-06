@@ -16,6 +16,7 @@ import {
   ForkKnife,
   ChartLineUp,
   Compass,
+  Calculator,
 } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -34,6 +35,7 @@ const TRACK_ITEMS = [
   { href: "/supplements", label: "Supplements", icon: Sparkle },
   { href: "/body-stats", label: "Body Stats", icon: ChartLineUp },
   { href: "/badges", label: "Achievements", icon: Trophy },
+  { href: "/calculator", label: "Calculator", icon: Calculator },
 ] as const;
 
 const RESOURCE_ITEMS = [

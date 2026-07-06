@@ -24,10 +24,7 @@ interface WorkoutHomeClientProps {
   isReadOnly?: boolean;
 }
 
-import { COACH_WORKOUT_PLAN } from "@/lib/workoutPlan";
-
-// Centralized Phase 1 Workout Plan Exercises
-const PHASE1_EXERCISES = COACH_WORKOUT_PLAN;
+import { COACH_WORKOUT_PLAN, getWorkoutPlanForDay, getWarmUpAndCoolDown } from "@/lib/workoutPlan";
 
 export function WorkoutHomeClient({
   profile,
@@ -122,6 +119,13 @@ export function WorkoutHomeClient({
 
   const { day: selectedDayNum, phase: selectedPhaseNum } =
     getSelectedDayProgress(selectedDate);
+
+  const currentPlan = getWorkoutPlanForDay(selectedDayNum);
+
+  const { warmup, cooldown } = useMemo(() => {
+    if (!currentPlan) return { warmup: [], cooldown: [] };
+    return getWarmUpAndCoolDown(currentPlan.name);
+  }, [currentPlan]);
 
   // Total Volume calculation helper
   const calculateVolume = (exercises: any[]) => {
@@ -279,8 +283,8 @@ export function WorkoutHomeClient({
         ) : (
           /* NO WORKOUT LOGGED STATE */
           <Card variant="surface" className="p-6 border-[#27272a]">
-            {selectedDayNum >= 1 && selectedDayNum <= 6 && PHASE1_EXERCISES.length > 0 ? (
-              /* ACTIVE TRAINING PLAN (MON/WED/FRI or PHASE 1 WORKOUT DAYS) */
+            {currentPlan !== null ? (
+              /* ACTIVE TRAINING PLAN (MON/WED/FRI or PHASE 1/2 WORKOUT DAYS) */
               <div className="space-y-4">
                 <div className="flex items-start justify-between">
                   <div>
@@ -293,7 +297,7 @@ export function WorkoutHomeClient({
                       </span>
                     </div>
                     <h3 className="font-display text-2xl text-[var(--text-primary)] font-black mt-1.5">
-                      PHASE 1 — FULL BODY
+                      {currentPlan.name}
                     </h3>
                   </div>
 
@@ -313,18 +317,11 @@ export function WorkoutHomeClient({
                       <span>🔥</span> WARM-UP PROTOCOL
                     </h4>
                     <span className="text-[10px] font-body-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[var(--accent-start)]/10 text-[var(--accent-text)]">
-                      ~6 Mins • 6 Steps
+                      ~{currentPlan.name.toUpperCase().includes("LEG") ? "7–10" : "5–7"} Mins • {warmup.length} Steps
                     </span>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-                    {[
-                      { num: "01", text: "3 min light cardio", detail: "Treadmill / Cross Trainer" },
-                      { num: "02", text: "Arm circles", detail: "15 each direction" },
-                      { num: "03", text: "Band pull-aparts", detail: "15 reps" },
-                      { num: "04", text: "Push-ups", detail: "10–15 reps (slow & controlled)" },
-                      { num: "05", text: "Light lateral raises", detail: "15 reps" },
-                      { num: "06", text: "First exercise warm-up set", detail: "1 set at 50% working weight" },
-                    ].map((step) => (
+                    {warmup.map((step) => (
                       <div key={step.num} className="flex items-center gap-3 p-3 rounded-xl bg-[#09090b] border border-[#27272a] hover:border-[#3f3f46] transition-colors">
                         <span className="w-7 h-7 rounded-lg bg-[var(--accent-start)]/10 text-[var(--accent-text)] flex items-center justify-center font-display text-xs font-black shrink-0">
                           {step.num}
@@ -346,7 +343,7 @@ export function WorkoutHomeClient({
                         Main Exercises
                       </p>
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-body-bold bg-[#27272a]/60 text-[var(--text-secondary)]">
-                        7 Exercises
+                        {currentPlan.exercises.length} Exercises
                       </span>
                     </div>
                     <span className="text-[11px] font-body text-[var(--text-muted)] flex items-center gap-1">
@@ -355,7 +352,7 @@ export function WorkoutHomeClient({
                   </div>
                   
                   <div className="space-y-2.5">
-                    {PHASE1_EXERCISES.map((ex, idx) => (
+                    {currentPlan.exercises.map((ex, idx) => (
                       <div
                         key={idx}
                         className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 rounded-2xl bg-[#18181b] border border-[#27272a] hover:border-[#3f3f46] transition-all duration-200 gap-2 shadow-sm"
@@ -391,17 +388,11 @@ export function WorkoutHomeClient({
                       <span>❄️</span> COOL-DOWN PROTOCOL
                     </h4>
                     <span className="text-[10px] font-body-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[var(--blue)]/10 text-[var(--blue)]">
-                      ~5 Mins • 5 Stretches
+                      ~5 Mins • {cooldown.length} Stretches
                     </span>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-                    {[
-                      { num: "01", text: "Chest stretch (doorway)", detail: "30 sec each side" },
-                      { num: "02", text: "Overhead tricep stretch", detail: "30 sec each arm" },
-                      { num: "03", text: "Cross-body shoulder stretch", detail: "30 sec each arm" },
-                      { num: "04", text: "Chest opener (clasped hands)", detail: "30 sec hold" },
-                      { num: "05", text: "Neck rolls", detail: "30 sec slow movements" },
-                    ].map((step) => (
+                    {cooldown.map((step) => (
                       <div key={step.num} className="flex items-center gap-3 p-3 rounded-xl bg-[#09090b] border border-[#27272a] hover:border-[#3f3f46] transition-colors">
                         <span className="w-7 h-7 rounded-lg bg-[var(--blue)]/10 text-[var(--blue)] flex items-center justify-center font-display text-xs font-black shrink-0">
                           {step.num}
@@ -415,7 +406,7 @@ export function WorkoutHomeClient({
                   </div>
                 </div>
               </div>
-            ) : selectedDayNum === 7 ? (
+            ) : selectedDayNum % 7 === 0 ? (
               /* REST DAY ACTIVE RECOVERY */
               <div className="flex flex-col items-center text-center py-4 space-y-3">
                 <div className="p-3 bg-[var(--bg-base)] border border-[var(--border)] rounded-full text-[var(--text-muted)]">

@@ -53,7 +53,7 @@ interface DashboardClientProps {
   isReadOnly?: boolean;
 }
 
-import { COACH_SUPPLEMENT_PLAN, COACH_WORKOUT_PLAN } from "@/lib/workoutPlan";
+import { COACH_SUPPLEMENT_PLAN, COACH_WORKOUT_PLAN, getWorkoutPlanForDay } from "@/lib/workoutPlan";
 
 const DEFAULT_SUPPLEMENTS: any[] = COACH_SUPPLEMENT_PLAN;
 
@@ -159,11 +159,14 @@ export default function DashboardClient({
 
   // Phase-specific data
   const getWorkoutPlanName = (day: number) => {
-    if (COACH_WORKOUT_PLAN.length === 0 || day > 7) {
-      return "No Active Plan (Custom Workout)";
+    const plan = getWorkoutPlanForDay(day);
+    if (plan) {
+      return plan.name;
     }
-    // Phase 1 (Days 1-7)
-    return day === 7 ? "Active Recovery (Mobility & Light Cardio)" : "Phase 1 — Full Body";
+    if (day % 7 === 0) {
+      return "Active Recovery & Rest";
+    }
+    return "No Active Plan (Custom Workout)";
   };
 
   const scheduledWorkout = getWorkoutPlanName(dayNumber);
