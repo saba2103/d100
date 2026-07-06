@@ -627,86 +627,88 @@ export function ActiveWorkoutClient({
   };
 
   return (
-    <div className="pb-24 pt-4 px-4 max-w-2xl mx-auto space-y-6">
+    <div className="pb-24 pt-20 px-4 max-w-2xl mx-auto space-y-6">
       
-      {/* Top sticky timer bar */}
-      <div className="sticky top-0 z-20 flex items-center justify-between py-3 px-4 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border)] shadow-md backdrop-blur-md">
-        {!isEditing ? (
-          <div className="flex items-center gap-2">
-            <Clock size={20} className="text-[var(--accent-text)]" />
-            <span className="font-display text-2xl font-black text-[var(--text-primary)] leading-none select-none">
-              {formatStopwatch(secondsElapsed)}
-            </span>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2">
-            <Clock size={20} className="text-[var(--text-muted)] animate-none" />
-            <span className="font-body text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider select-none">
-              Editing Log:
-            </span>
-            <input
-              type="number"
-              value={Math.round(secondsElapsed / 60)}
-              onChange={(e) => {
-                const val = parseInt(e.target.value, 10) || 0;
-                setSecondsElapsed(val * 60);
-              }}
-              className="w-14 text-center font-body text-xs font-bold py-1 px-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg-base)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-start)] transition-colors"
-            />
-            <span className="font-body text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider select-none">
-              mins
-            </span>
-          </div>
-        )}
+      {/* Top fixed timer bar */}
+      <div className="fixed top-0 left-0 right-0 z-20 bg-[var(--bg-surface)] border-b border-[var(--border)] shadow-sm backdrop-blur-md">
+        <div className="max-w-2xl mx-auto flex items-center justify-between py-3.5 px-4">
+          {!isEditing ? (
+            <div className="flex items-center gap-2">
+              <Clock size={20} className="text-[var(--accent-text)]" />
+              <span className="font-display text-2xl font-black text-[var(--text-primary)] leading-none select-none">
+                {formatStopwatch(secondsElapsed)}
+              </span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Clock size={20} className="text-[var(--text-muted)] animate-none" />
+              <span className="font-body text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider select-none">
+                Editing Log:
+              </span>
+              <input
+                type="number"
+                value={Math.round(secondsElapsed / 60)}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value, 10) || 0;
+                  setSecondsElapsed(val * 60);
+                }}
+                className="w-14 text-center font-body text-xs font-bold py-1 px-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg-base)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-start)] transition-colors"
+              />
+              <span className="font-body text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider select-none">
+                mins
+              </span>
+            </div>
+          )}
 
-        {/* Floating Rest Countdown Timer */}
-        {restTimeLeft !== null ? (
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="flex items-center gap-2 px-3 py-1 bg-[rgba(249,115,22,0.12)] border border-[rgba(249,115,22,0.25)] rounded-full text-xs font-body font-body-bold text-[var(--accent-text)]"
-          >
-            <Timer size={14} className="animate-pulse" />
-            <span>Rest: {restTimeLeft}s</span>
-            <button
-              onClick={() => setRestTimeLeft(null)}
-              className="ml-1 text-[10px] uppercase font-medium hover:underline text-[var(--text-muted)]"
+          {/* Floating Rest Countdown Timer */}
+          {restTimeLeft !== null ? (
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="flex items-center gap-2 px-3 py-1 bg-[rgba(249,115,22,0.12)] border border-[rgba(249,115,22,0.25)] rounded-full text-xs font-body font-body-bold text-[var(--accent-text)]"
             >
-              Skip
-            </button>
-          </motion.div>
-        ) : (
-          <div className="flex items-center gap-1.5">
-            <span className={cn(
-              "text-[10px] font-body uppercase font-bold tracking-wider px-2 py-0.5 rounded-full",
-              autosaveStatus === 'saving' && "bg-[var(--accent-start)]/10 text-[var(--accent-text)] animate-pulse",
-              autosaveStatus === 'saved' && "bg-[var(--green)]/10 text-[var(--green)]",
-              autosaveStatus === 'error' && "bg-[var(--red)]/10 text-[var(--red)]"
-            )}>
-              {autosaveStatus === 'saving' && "• Syncing..."}
-              {autosaveStatus === 'saved' && "✓ Synced"}
-              {autosaveStatus === 'error' && "✗ Sync Error"}
-            </span>
-          </div>
-        )}
+              <Timer size={14} className="animate-pulse" />
+              <span>Rest: {restTimeLeft}s</span>
+              <button
+                onClick={() => setRestTimeLeft(null)}
+                className="ml-1 text-[10px] uppercase font-medium hover:underline text-[var(--text-muted)]"
+              >
+                Skip
+              </button>
+            </motion.div>
+          ) : (
+            <div className="flex items-center gap-1.5">
+              <span className={cn(
+                "text-[10px] font-body uppercase font-bold tracking-wider px-2 py-0.5 rounded-full",
+                autosaveStatus === 'saving' && "bg-[var(--accent-start)]/10 text-[var(--accent-text)] animate-pulse",
+                autosaveStatus === 'saved' && "bg-[var(--green)]/10 text-[var(--green)]",
+                autosaveStatus === 'error' && "bg-[var(--red)]/10 text-[var(--red)]"
+              )}>
+                {autosaveStatus === 'saving' && "• Syncing..."}
+                {autosaveStatus === 'saved' && "✓ Synced"}
+                {autosaveStatus === 'error' && "✗ Sync Error"}
+              </span>
+            </div>
+          )}
 
-        <div className="flex gap-2">
-          <Button
-            size="sm"
-            variant="danger"
-            onClick={() => setIsDiscardModalOpen(true)}
-          >
-            Discard
-          </Button>
-          <Button
-            size="sm"
-            variant="primary"
-            onClick={handleFinishWorkout}
-            loading={saving}
-            disabled={saving}
-          >
-            Finish
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="danger"
+              onClick={() => setIsDiscardModalOpen(true)}
+            >
+              Discard
+            </Button>
+            <Button
+              size="sm"
+              variant="primary"
+              onClick={handleFinishWorkout}
+              loading={saving}
+              disabled={saving}
+            >
+              Finish
+            </Button>
+          </div>
         </div>
       </div>
 
