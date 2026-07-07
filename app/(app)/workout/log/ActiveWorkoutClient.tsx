@@ -627,10 +627,10 @@ export function ActiveWorkoutClient({
   };
 
   return (
-    <div className="pb-24 pt-20 px-4 max-w-2xl mx-auto space-y-6">
+    <div className="pb-24 pt-32 lg:pt-20 px-4 max-w-2xl mx-auto space-y-6">
       
       {/* Top fixed timer bar */}
-      <div className="fixed top-0 left-0 right-0 z-20 bg-[var(--bg-surface)] border-b border-[var(--border)] shadow-sm backdrop-blur-md">
+      <div className="fixed top-14 lg:top-0 left-0 sm:left-[60px] lg:left-[220px] right-0 z-20 bg-[var(--bg-surface)] border-b border-[var(--border)] shadow-sm backdrop-blur-md">
         <div className="max-w-2xl mx-auto flex items-center justify-between py-3.5 px-4">
           {!isEditing ? (
             <div className="flex items-center gap-2">
