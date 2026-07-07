@@ -34,17 +34,109 @@ export function calculateStreakFromDates(datesSet: Set<string>, todayStr?: strin
   return streak;
 }
 
+export function calculateWorkoutStreak(
+  datesSet: Set<string>,
+  programStartDateStr: string | null,
+  todayStr?: string
+): number {
+  if (!programStartDateStr) {
+    return calculateStreakFromDates(datesSet, todayStr);
+  }
+
+  const start = new Date(programStartDateStr);
+  start.setHours(0, 0, 0, 0);
+
+  const today = todayStr ? new Date(todayStr) : new Date();
+  today.setHours(0, 0, 0, 0);
+
+  let currentDate = new Date(today);
+  currentDate.setHours(0, 0, 0, 0);
+
+  const isRestDay = (date: Date): boolean => {
+    const diffTime = date.getTime() - start.getTime();
+    const programDay = Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    if (programDay <= 0) return false;
+    return programDay % 7 === 0;
+  };
+
+  const formatDate = (date: Date): string => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  };
+
+  const todayFormatted = formatDate(currentDate);
+  let startCheckDate = new Date(currentDate);
+
+  if (datesSet.has(todayFormatted) || isRestDay(currentDate)) {
+    // Start check from today
+  } else {
+    const yesterday = new Date(currentDate);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayFormatted = formatDate(yesterday);
+    if (datesSet.has(yesterdayFormatted) || isRestDay(yesterday)) {
+      startCheckDate = yesterday;
+    } else {
+      return 0;
+    }
+  }
+
+  let walkDate = new Date(startCheckDate);
+  walkDate.setHours(0, 0, 0, 0);
+  let streak = 0;
+
+  while (true) {
+    const checkStr = formatDate(walkDate);
+    if (walkDate.getTime() < start.getTime()) {
+      break;
+    }
+
+    if (datesSet.has(checkStr) || isRestDay(walkDate)) {
+      streak++;
+      walkDate.setDate(walkDate.getDate() - 1);
+    } else {
+      break;
+    }
+
+    if (streak > 365) break;
+  }
+
+  return streak;
+}
+
 export async function workoutStreak(supabase: any, userId: string, profileTag: "S" | "P" = "S"): Promise<number> {
-  const { data, error } = await supabase
+  const { data: logs, error: logsError } = await supabase
     .from("workout_logs")
     .select("logged_at")
     .eq("user_id", userId)
     .eq("profile_tag", profileTag);
 
-  if (error || !data) return 0;
+  if (logsError || !logs) return 0;
 
-  const datesSet = new Set<string>(data.map((d: any) => d.logged_at));
-  return calculateStreakFromDates(datesSet);
+  // Query program start date
+  let startStr: string | null = null;
+  if (profileTag === "P") {
+    const { data: mp } = await supabase
+      .from("member_profiles")
+      .select("program_start_date")
+      .eq("user_id", userId)
+      .eq("profile_tag", "P")
+      .maybeSingle();
+    startStr = mp?.program_start_date || null;
+  }
+
+  if (!startStr) {
+    const { data: p } = await supabase
+      .from("profiles")
+      .select("program_start_date")
+      .eq("id", userId)
+      .single();
+    startStr = p?.program_start_date || null;
+  }
+
+  const datesSet = new Set<string>(logs.map((d: any) => d.logged_at));
+  return calculateWorkoutStreak(datesSet, startStr);
 }
 
 export async function waterStreak(supabase: any, userId: string, profileTag: "S" | "P" = "S"): Promise<number> {
