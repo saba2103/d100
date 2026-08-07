@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { X, Lock, Check, Sparkle, Fire, Crown, Trophy, Rocket, Star, Heart, Flame, Lightning, Barbell, ForkKnife, Drop, Pill, Image } from "@phosphor-icons/react";
+import { X, Lock, Check, Sparkle, Fire, Crown, Trophy, Rocket, Star, Heart, Flame, Lightning, Barbell, ForkKnife, Drop, Pill, Image, Warning, ListChecks } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils/cn";
 import { createClient } from "@/lib/supabase/client";
@@ -448,12 +448,77 @@ export function StoriesBar({ activeProfile, programDay, workoutStreak, profileNa
         {
           id: "p3_1",
           bgImage: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1000&auto=format&fit=crop",
-          tag: "PHASE 3 • DAYS 36–63",
+          tag: "LESSON 3.1 • DAYS 36–63",
           tagColor: "text-cyan-400 bg-cyan-500/15 border-cyan-500/30",
           title: "MUSCLE BUILDING MODE",
-          quote: "You have crossed the halfway mark. You are no longer trying — you are transforming.",
-          author: "Course Chapter 3.1",
+          quote: "You have crossed the halfway mark. Phase 3 training is all about maximum intensity. We are adding 200 calories to fuel your performance and build serious muscle.",
+          author: "Coach — Lesson 3.1",
           accentGradient: "from-blue-500 to-cyan-400",
+        },
+        {
+          id: "p3_2",
+          bgImage: "https://images.unsplash.com/photo-1490645935967-10de6ba17061?q=80&w=1000&auto=format&fit=crop",
+          tag: "LESSON 3.2 • NUTRITION",
+          tagColor: "text-cyan-400 bg-cyan-500/15 border-cyan-500/30",
+          title: "ADD 200 CALORIES",
+          keyPoints: [
+            { icon: ForkKnife, title: "Clean Carbs Only", desc: "Add 1 extra roti, 1/2 cup rice, or a banana to your meal plan." },
+            { icon: Lightning, title: "Pre/Post Workout Timing", desc: "Consume these extra carbs around training for maximum energy." },
+            { icon: Drop, title: "4 Liters Hydration", desc: "You will sweat more in Phase 3. Carry a water bottle everywhere." },
+          ],
+          accentGradient: "from-cyan-500 to-blue-500",
+        },
+        {
+          id: "p3_3",
+          bgImage: "https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?q=80&w=1000&auto=format&fit=crop",
+          tag: "LESSON 3.3 • WORKOUT SPLIT",
+          tagColor: "text-cyan-400 bg-cyan-500/15 border-cyan-500/30",
+          title: "INTENSE WEEKLY FLOW",
+          keyPoints: [
+            { icon: Barbell, title: "Days 1–3: PPL", desc: "Push Day, Pull Day, and Leg Day split to build balanced strength." },
+            { icon: Sparkle, title: "Day 5: Chest & Back", desc: "Giant sets back-to-back for chest and lats to force growth." },
+            { icon: Fire, title: "Day 6: Arms & Delts", desc: "Supersets focusing on curls, skull crushers, and side raises." },
+          ],
+          accentGradient: "from-blue-500 to-indigo-600",
+        },
+        {
+          id: "p3_4",
+          bgImage: "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?q=80&w=1000&auto=format&fit=crop",
+          tag: "LESSON 3.3 • ADVANCED TECH",
+          tagColor: "text-cyan-400 bg-cyan-500/15 border-cyan-500/30",
+          title: "SHOCK YOUR MUSCLES",
+          keyPoints: [
+            { icon: Lightning, title: "Superset [SS]", desc: "Two exercises back-to-back with no rest. Rest after both." },
+            { icon: Flame, title: "Drop Set [DS]", desc: "Train to failure, reduce weight by 30-40%, continue to failure." },
+            { icon: Crown, title: "Giant Set [GS]", desc: "Three exercises back-to-back. Rest 90 seconds after all three." },
+          ],
+          accentGradient: "from-[#FF6B00] to-[#FFAA00]",
+        },
+        {
+          id: "p3_5",
+          bgImage: "https://images.unsplash.com/photo-1494390248081-4e521a5940db?q=80&w=1000&auto=format&fit=crop",
+          tag: "LESSON 3.4 • SUPPLEMENTS",
+          tagColor: "text-cyan-400 bg-cyan-500/15 border-cyan-500/30",
+          title: "PHASE 3 STACK",
+          keyPoints: [
+            { icon: Pill, title: "Whey + Creatine", desc: "1 scoop whey + 5g creatine monohydrate daily for recovery." },
+            { icon: Star, title: "D3 + K2", desc: "5000 IU Vitamin D3 with fat-soluble meals for optimal hormone levels." },
+            { icon: Heart, title: "Fish Oil + Multivitamin", desc: "Omega-3 fatty acids for joint lubrication and cardiovascular support." },
+          ],
+          accentGradient: "from-cyan-400 to-teal-500",
+        },
+        {
+          id: "p3_6",
+          bgImage: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?q=80&w=1000&auto=format&fit=crop",
+          tag: "LESSON 3.5 & 3.6 • ACTIONS",
+          tagColor: "text-cyan-400 bg-cyan-500/15 border-cyan-500/30",
+          title: "MISTAKES & ACTION PLAN",
+          keyPoints: [
+            { icon: Warning, title: "Ego Lifting", desc: "Avoid bouncing weights or using momentum. Maintain strict control." },
+            { icon: ListChecks, title: "Track Every Set", desc: "Strive for progressive overload by adding weight or reps weekly." },
+            { icon: Check, title: "Rest & Sleep", desc: "Get 7-8 hours of sleep and value rest days — growth happens then." },
+          ],
+          accentGradient: "from-blue-600 to-cyan-500",
         },
       ],
     },

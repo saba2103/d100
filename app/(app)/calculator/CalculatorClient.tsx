@@ -29,14 +29,15 @@ export function CalculatorClient({ initialWeight }: CalculatorClientProps) {
   const [weightInput, setWeightInput] = useState<string>(
     initialWeight ? String(Math.round(initialWeight)) : "80"
   );
+  const [activePhase, setActivePhase] = useState<2 | 3>(3);
 
   const weight = parseFloat(weightInput) || 80;
 
   // 1. Maintenance Calories (Weight * 29)
   const maintenance = Math.round(weight * 29);
 
-  // 2. Fat Loss Target (Maintenance - 500)
-  const dailyCalorieTarget = Math.round(maintenance - 500);
+  // 2. Fat Loss Target (Maintenance - 500 for P2, Maintenance - 300 for P3)
+  const dailyCalorieTarget = Math.round(maintenance - (activePhase === 2 ? 500 : 300));
 
   // 3. Protein (Weight * 2)
   const proteinG = Math.round(weight * 2);
@@ -73,7 +74,7 @@ export function CalculatorClient({ initialWeight }: CalculatorClientProps) {
           Calculator
         </h1>
         <p className="font-body text-xs text-[var(--text-muted)] mt-1">
-          Calculate your personalized calorie and macro targets for Phase 2
+          Calculate your personalized calorie and macro targets for Phase 2 & 3
         </p>
       </div>
 
@@ -133,6 +134,34 @@ export function CalculatorClient({ initialWeight }: CalculatorClientProps) {
         )}
       </Card>
 
+      {/* Phase Selector Tabs */}
+      <div className="flex gap-2 p-1 rounded-2xl bg-[#18181b] border border-[#27272a]/60">
+        <button
+          onClick={() => setActivePhase(2)}
+          type="button"
+          className={cn(
+            "flex-1 py-2 px-3 rounded-xl text-xs font-display font-black uppercase tracking-wider transition-all duration-150",
+            activePhase === 2
+              ? "bg-[var(--accent-start)]/10 text-[var(--accent-text)]"
+              : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[#27272a]/40"
+          )}
+        >
+          Phase 2 (Fat Loss)
+        </button>
+        <button
+          onClick={() => setActivePhase(3)}
+          type="button"
+          className={cn(
+            "flex-1 py-2 px-3 rounded-xl text-xs font-display font-black uppercase tracking-wider transition-all duration-150",
+            activePhase === 3
+              ? "bg-[var(--accent-start)]/10 text-[var(--accent-text)]"
+              : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[#27272a]/40"
+          )}
+        >
+          Phase 3 (Muscle Gain)
+        </button>
+      </div>
+
       {/* Target Breakdown Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Step 1: Maintenance */}
@@ -154,14 +183,16 @@ export function CalculatorClient({ initialWeight }: CalculatorClientProps) {
         <Card variant="surface" className="p-4 border-[#27272a] bg-gradient-to-br from-[#18181b] to-[rgba(249,115,22,0.02)] flex flex-col justify-between">
           <div>
             <span className="text-[9px] font-body-bold text-[var(--accent-text)] uppercase tracking-wider">Step 2 — Deficit</span>
-            <h3 className="font-display text-sm font-black text-[var(--text-primary)] uppercase mt-0.5">Fat Loss Target</h3>
+            <h3 className="font-display text-sm font-black text-[var(--text-primary)] uppercase mt-0.5">
+              {activePhase === 2 ? "Fat Loss Target" : "Body Recomp Target"}
+            </h3>
           </div>
           <div className="mt-4 flex items-baseline gap-1">
             <span className="font-display text-3xl font-black text-[var(--accent-text)]">{dailyCalorieTarget.toLocaleString()}</span>
             <span className="text-xs text-[var(--accent-text)] font-body">kcal / day</span>
           </div>
           <p className="text-[10px] text-[var(--text-muted)] font-body mt-2 border-t border-[#27272a]/60 pt-2">
-            Formula: {maintenance} kcal − 500 kcal
+            Formula: {maintenance} kcal − {activePhase === 2 ? 500 : 300} kcal
           </p>
         </Card>
       </div>
@@ -265,18 +296,18 @@ export function CalculatorClient({ initialWeight }: CalculatorClientProps) {
 
         <div className="space-y-2 font-body text-xs text-[var(--text-secondary)] leading-relaxed">
           <p>
-            The sample meal plans in the course guides are designed for an <strong>80kg man</strong> (~1,820 kcal, 160g protein).
+            The sample meal plans in the course guides are designed for an <strong>80kg man</strong> (~{activePhase === 2 ? "1,820" : "2,020"} kcal, 160g protein).
           </p>
           <div className="p-3 rounded-xl bg-[#09090b] border border-[#27272a]/60 font-body text-xs text-[var(--text-primary)]">
-            {dailyCalorieTarget < 1820 ? (
+            {dailyCalorieTarget < (activePhase === 2 ? 1820 : 2020) ? (
               <p className="flex items-start gap-1.5 text-[var(--amber)]">
                 <Warning size={16} className="shrink-0 mt-0.5" />
-                <span>Since your fat loss calorie target is <strong>lower than 1,820 kcal</strong>, you should reduce carbohydrate portions (less rice or roti) from the sample plans.</span>
+                <span>Since your {activePhase === 2 ? "fat loss" : "body recomp"} calorie target is <strong>lower than {activePhase === 2 ? "1,820" : "2,020"} kcal</strong>, you should reduce carbohydrate portions (less rice or roti) from the sample plans.</span>
               </p>
-            ) : dailyCalorieTarget > 1820 ? (
+            ) : dailyCalorieTarget > (activePhase === 2 ? 1820 : 2020) ? (
               <p className="flex items-start gap-1.5 text-[var(--green)]">
                 <CheckCircle size={16} className="shrink-0 mt-0.5" />
-                <span>Since your fat loss calorie target is <strong>higher than 1,820 kcal</strong>, you can increase carbohydrate portions (more rice or roti) from the sample plans.</span>
+                <span>Since your {activePhase === 2 ? "fat loss" : "body recomp"} calorie target is <strong>higher than {activePhase === 2 ? "1,820" : "2,020"} kcal</strong>, you can increase carbohydrate portions (more rice or roti) from the sample plans.</span>
               </p>
             ) : (
               <p className="flex items-start gap-1.5 text-[var(--green)]">

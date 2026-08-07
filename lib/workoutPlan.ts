@@ -65,6 +65,58 @@ export const PHASE2_LEGS_PLAN: ExercisePlanItem[] = [
   { name: 'Back Extension', sets: 3, reps: '15', repsRange: '15', target: 'Lower Back / Glutes' },
 ];
 
+export const PHASE3_PUSH_PLAN: ExercisePlanItem[] = [
+  { name: 'Incline Barbell Press', sets: 4, reps: '8-10', repsRange: '8-10', target: 'Upper Chest' },
+  { name: 'Flat Dumbbell Press', sets: 3, reps: '10-12', repsRange: '10-12', target: 'Chest' },
+  { name: 'Cable Fly (Low to High) [SS]', sets: 3, reps: '12-15', repsRange: '12-15', target: 'Mid/Inner Chest' },
+  { name: 'Push-Ups [SS]', sets: 3, reps: 'Failure', repsRange: 'Failure', target: 'Chest / Triceps' },
+  { name: 'Seated DB Shoulder Press', sets: 3, reps: '10-12', repsRange: '10-12', target: 'Front/Side Delts' },
+  { name: 'Lateral Raises [DS]', sets: 3, reps: '15', repsRange: '15 (Drop set on last)', target: 'Side Delts' },
+  { name: 'Tricep Rope Pushdown [DS]', sets: 3, reps: '12', repsRange: '12 (Drop set on last)', target: 'Triceps' },
+];
+
+export const PHASE3_PULL_PLAN: ExercisePlanItem[] = [
+  { name: 'Deadlift / Rack Pulls', sets: 4, reps: '6-8', repsRange: '6-8', target: 'Lower Back / Posterior Chain' },
+  { name: 'Weighted Pull-Ups / Lat Pulldown', sets: 3, reps: '8-10', repsRange: '8-10', target: 'Lats (Width)' },
+  { name: 'T-Bar Row', sets: 3, reps: '10-12', repsRange: '10-12', target: 'Mid Back (Thickness)' },
+  { name: 'Seated Cable Row [SS]', sets: 3, reps: '12', repsRange: '12', target: 'Mid Back' },
+  { name: 'Face Pulls [SS]', sets: 3, reps: '15', repsRange: '15', target: 'Rear Delts / Traps' },
+  { name: 'Barbell Curls', sets: 3, reps: '10-12', repsRange: '10-12', target: 'Biceps' },
+  { name: 'Hammer Curls [DS]', sets: 3, reps: '12', repsRange: '12 (Drop set on last)', target: 'Biceps / Brachialis' },
+];
+
+export const PHASE3_LEGS_PLAN: ExercisePlanItem[] = [
+  { name: 'Barbell Squats', sets: 4, reps: '8-10', repsRange: '8-10', target: 'Quads / Glutes' },
+  { name: 'Romanian Deadlifts (RDL)', sets: 3, reps: '10-12', repsRange: '10-12', target: 'Hamstrings' },
+  { name: 'Leg Press [DS]', sets: 3, reps: '12', repsRange: '12 (Drop set on last)', target: 'Quads / Glutes' },
+  { name: 'Walking Lunges', sets: 3, reps: '12 each', repsRange: '12 each', target: 'Quads / Glutes' },
+  { name: 'Leg Extension [SS]', sets: 3, reps: '15', repsRange: '15', target: 'Quads' },
+  { name: 'Leg Curls [SS]', sets: 3, reps: '15', repsRange: '15', target: 'Hamstrings' },
+  { name: 'Calf Raises [DS]', sets: 4, reps: '15-20', repsRange: '15-20 (Drop set on last)', target: 'Calves' },
+  { name: 'Plank', sets: 3, reps: '60 sec', repsRange: '60 sec', target: 'Core' },
+];
+
+export const PHASE3_CHEST_BACK_PLAN: ExercisePlanItem[] = [
+  { name: 'Incline Dumbbell Press [GS A]', sets: 3, reps: '10-12', repsRange: '10-12', target: 'Chest' },
+  { name: 'Lat Pulldown [GS A]', sets: 3, reps: '10-12', repsRange: '10-12', target: 'Back' },
+  { name: 'Dumbbell Pullovers [GS A]', sets: 3, reps: '12-15', repsRange: '12-15', target: 'Chest/Lats' },
+  { name: 'Pec Deck Fly / Cable Fly [GS B]', sets: 3, reps: '12-15', repsRange: '12-15', target: 'Chest' },
+  { name: 'Seated Cable Row [GS B]', sets: 3, reps: '10-12', repsRange: '10-12', target: 'Back' },
+  { name: 'Push-Ups [GS B]', sets: 3, reps: 'Failure', repsRange: 'Failure', target: 'Chest/Triceps' },
+];
+
+export const PHASE3_ARMS_DELTS_PLAN: ExercisePlanItem[] = [
+  { name: 'Barbell Curl [SS A]', sets: 3, reps: '10-12', repsRange: '10-12', target: 'Biceps' },
+  { name: 'Skull Crushers [SS A]', sets: 3, reps: '10-12', repsRange: '10-12', target: 'Triceps' },
+  { name: 'Preacher Curls [SS B]', sets: 3, reps: '12', repsRange: '12', target: 'Biceps (Peak)' },
+  { name: 'Tricep Rope Pushdown [SS B]', sets: 3, reps: '12', repsRange: '12', target: 'Triceps' },
+  { name: 'Hammer Curls [SS C - DS]', sets: 3, reps: '12', repsRange: '12 (Drop set on last)', target: 'Biceps' },
+  { name: 'Overhead Tricep Extension [SS C - DS]', sets: 3, reps: '12', repsRange: '12 (Drop set on last)', target: 'Triceps' },
+  { name: 'Seated DB Shoulder Press', sets: 3, reps: '10-12', repsRange: '10-12', target: 'Front/Side Delts' },
+  { name: 'Lateral Raises [DS]', sets: 3, reps: '15', repsRange: '15 (Drop set on last)', target: 'Side Delts' },
+  { name: 'Rear Delt Fly / Face Pulls', sets: 3, reps: '15', repsRange: '15', target: 'Rear Delts' },
+];
+
 export function getWorkoutPlanForDay(day: number): { name: string; exercises: ExercisePlanItem[] } | null {
   if (day >= 1 && day <= 6) {
     return { name: "PHASE 1 — FULL BODY", exercises: COACH_WORKOUT_PLAN };
@@ -78,6 +130,23 @@ export function getWorkoutPlanForDay(day: number): { name: string; exercises: Ex
       return { name: "PHASE 2 — PULL DAY", exercises: PHASE2_PULL_PLAN };
     } else if (dayIndexWithinWeek === 3 || dayIndexWithinWeek === 6) {
       return { name: "PHASE 2 — LEG DAY", exercises: PHASE2_LEGS_PLAN };
+    } else {
+      return null; // Rest Day
+    }
+  } else if (day >= 36 && day <= 63) {
+    const dayIndexWithinWeek = (day - 36) % 7 + 1;
+    if (dayIndexWithinWeek === 1) {
+      return { name: "PHASE 3 — PUSH DAY", exercises: PHASE3_PUSH_PLAN };
+    } else if (dayIndexWithinWeek === 2) {
+      return { name: "PHASE 3 — PULL DAY", exercises: PHASE3_PULL_PLAN };
+    } else if (dayIndexWithinWeek === 3) {
+      return { name: "PHASE 3 — LEG DAY", exercises: PHASE3_LEGS_PLAN };
+    } else if (dayIndexWithinWeek === 4) {
+      return null; // Rest Day
+    } else if (dayIndexWithinWeek === 5) {
+      return { name: "PHASE 3 — CHEST & BACK", exercises: PHASE3_CHEST_BACK_PLAN };
+    } else if (dayIndexWithinWeek === 6) {
+      return { name: "PHASE 3 — ARMS & DELTS", exercises: PHASE3_ARMS_DELTS_PLAN };
     } else {
       return null; // Rest Day
     }
