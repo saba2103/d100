@@ -201,7 +201,7 @@ function AddFoodForm({
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           const fileExt = selectedFile.name.split(".").pop() || "jpg";
-          const fileName = `meals/${user.id}/${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
+          const fileName = `${user.id}/meals_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
           
           // 1. Upload file to storage bucket "collection"
           const { error: uploadErr } = await supabase.storage
