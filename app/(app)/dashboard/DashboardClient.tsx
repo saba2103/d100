@@ -779,6 +779,8 @@ export default function DashboardClient({
             initialInsight={latestInsightForProfile?.insight || null}
             initialGeneratedAt={latestInsightForProfile?.created_at || null}
             hasApiKey={true}
+            today={today}
+            dayNumber={dayNumber}
           />
 
         </div>

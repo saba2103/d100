@@ -106,6 +106,50 @@ function AddFoodForm({
   const [analyzing, setAnalyzing] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
 
+  const { profile } = useAppUser();
+  const [historicalFoods, setHistoricalFoods] = useState<FoodItem[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      if (!profile?.id) return;
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("nutrition_logs")
+        .select("items")
+        .eq("user_id", profile.id)
+        .eq("profile_tag", (activeProfileTag || "S") as "S" | "P")
+        .order("logged_at", { ascending: false })
+        .limit(100);
+
+      if (data) {
+        const foodMap = new Map<string, FoodItem>();
+        data.forEach((row) => {
+          if (Array.isArray(row.items)) {
+            row.items.forEach((item: FoodItem) => {
+              if (item && item.name) {
+                const lowerName = item.name.trim().toLowerCase();
+                if (!foodMap.has(lowerName)) {
+                  foodMap.set(lowerName, item);
+                }
+              }
+            });
+          }
+        });
+        setHistoricalFoods(Array.from(foodMap.values()));
+      }
+    };
+    fetchHistory();
+  }, [profile?.id, activeProfileTag]);
+
+  const filteredFoods = useMemo(() => {
+    const query = name.trim().toLowerCase();
+    if (!query) return [];
+    return historicalFoods.filter((item) =>
+      item.name.toLowerCase().includes(query)
+    ).slice(0, 5);
+  }, [name, historicalFoods]);
+
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -325,26 +369,67 @@ function AddFoodForm({
       </div>
 
       {/* Food Name — tall textarea */}
-      <div className="space-y-1.5">
+      <div className="space-y-1.5 relative">
         <label htmlFor="food-name" className="font-body text-[10px] font-body-bold uppercase tracking-widest text-[var(--text-muted)]">Food Name</label>
         <textarea
           id="food-name"
           rows={3}
           placeholder="e.g. 2 rotis with dal, salad and a glass of milk — describe in detail for better AI detection"
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) => {
+            setName(e.target.value);
+            setShowSuggestions(true);
+          }}
+          onFocus={() => setShowSuggestions(true)}
           required
           className="w-full bg-[var(--bg-elevated)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] font-body text-sm rounded-xl px-3.5 py-3 resize-none outline-none focus:ring-2 focus:ring-[var(--accent-start)] transition-all"
         />
+        
+        {/* Real-time search suggestions */}
+        {showSuggestions && filteredFoods.length > 0 && (
+          <div className="absolute left-0 right-0 top-full mt-1.5 z-40 bg-[var(--bg-surface)] border border-[var(--border)] rounded-2xl p-2 max-h-48 overflow-y-auto space-y-1 shadow-xl">
+            <p className="text-[9px] font-body-bold text-[var(--text-muted)] uppercase tracking-wider px-2.5 py-1.5">Previously Logged</p>
+            {filteredFoods.map((item, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => {
+                  setName(item.name);
+                  setCalories(String(item.calories));
+                  setProtein(String(item.protein_g));
+                  setCarbs(String(item.carbs_g));
+                  setFat(String(item.fat_g));
+                  setQty(String(item.quantity));
+                  setUnit(item.unit || "serving");
+                  setShowSuggestions(false);
+                }}
+                className="w-full text-left p-2.5 hover:bg-[var(--bg-elevated)] rounded-xl flex items-center justify-between transition-colors border-0"
+              >
+                <div className="min-w-0 pr-4">
+                  <p className="font-body text-xs font-bold text-[var(--text-primary)] capitalize truncate">{item.name}</p>
+                  <p className="font-body text-[9px] text-[var(--text-muted)] mt-0.5 capitalize">{item.quantity} {item.unit || "serving"}</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="font-body text-xs font-bold text-[var(--green)]">{item.calories} kcal</p>
+                  <p className="font-body text-[9px] text-[var(--text-secondary)] mt-0.5">
+                    P: {item.protein_g}g | C: {item.carbs_g}g | F: {item.fat_g}g
+                  </p>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <Input label="Quantity" id="food-qty" type="text"
           placeholder="1" value={qty}
-          onChange={(e) => setQty(e.target.value)} />
+          onChange={(e) => setQty(e.target.value)}
+          onFocus={() => setShowSuggestions(false)} />
         <Input label="Unit" id="food-unit" type="text"
           placeholder="cup / g / serving" value={unit}
-          onChange={(e) => setUnit(e.target.value)} />
+          onChange={(e) => setUnit(e.target.value)}
+          onFocus={() => setShowSuggestions(false)} />
       </div>
 
       {/* Detect with AI button */}
@@ -369,18 +454,22 @@ function AddFoodForm({
 
       <Input label="Calories (kcal)" id="food-cal" type="number"
         inputMode="numeric" placeholder="300" value={calories}
-        onChange={(e) => setCalories(e.target.value)} required />
+        onChange={(e) => setCalories(e.target.value)}
+        onFocus={() => setShowSuggestions(false)} required />
 
       <div className="grid grid-cols-3 gap-3">
         <Input label="Protein (g)" id="food-prot" type="number"
           inputMode="decimal" placeholder="25" value={protein}
-          onChange={(e) => setProtein(e.target.value)} />
+          onChange={(e) => setProtein(e.target.value)}
+          onFocus={() => setShowSuggestions(false)} />
         <Input label="Carbs (g)" id="food-carbs" type="number"
           inputMode="decimal" placeholder="40" value={carbs}
-          onChange={(e) => setCarbs(e.target.value)} />
+          onChange={(e) => setCarbs(e.target.value)}
+          onFocus={() => setShowSuggestions(false)} />
         <Input label="Fat (g)" id="food-fat" type="number"
           inputMode="decimal" placeholder="8" value={fat}
-          onChange={(e) => setFat(e.target.value)} />
+          onChange={(e) => setFat(e.target.value)}
+          onFocus={() => setShowSuggestions(false)} />
       </div>
 
       <div className="flex gap-3 pt-2">

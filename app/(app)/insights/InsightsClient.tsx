@@ -319,6 +319,56 @@ export function InsightsClient({
     }
   }, [selectedDay]);
 
+  // Handle auto-generation redirect from Dashboard page
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const urlDay = params.get("day");
+      let targetDay = programDay;
+
+      if (urlDay) {
+        const dVal = parseInt(urlDay, 10);
+        if (!isNaN(dVal) && dVal >= 1 && dVal <= 100) {
+          setSelectedDay(dVal);
+          targetDay = dVal;
+        }
+      }
+
+      if (params.get("generate") === "true" && !generating && !isReadOnly && programStartDate) {
+        const date = getDateForDay(programStartDate, targetDay);
+        const runGenerate = async () => {
+          setGenerating(true);
+          setError(null);
+          try {
+            const res = await fetch("/api/insights/generate-day", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ date, profileId, dayNumber: targetDay }),
+            });
+            const data = await res.json();
+            if (!res.ok) {
+              setError(data.error || "Generation failed. Try again.");
+            } else if (data.error === "no_data") {
+              setError(data.message || "No data logged for this day.");
+            } else if (data.insight) {
+              setSessionInsights(prev => ({ ...prev, [targetDay]: { ...data.insight, dayNumber: targetDay, date } }));
+            }
+          } catch {
+            setError("Something went wrong. Check your connection.");
+          } finally {
+            setGenerating(false);
+          }
+        };
+
+        runGenerate();
+
+        // Clean query parameters from URL without reloading
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, "", newUrl);
+      }
+    }
+  }, [programStartDate, isReadOnly, programDay, profileId]);
+
   const handleGenerate = async () => {
     if (isReadOnly) return;
     if (!programStartDate) {

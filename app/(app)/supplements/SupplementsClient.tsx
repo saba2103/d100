@@ -56,10 +56,46 @@ export function SupplementsClient({ userId, profileTag, today, programStartDate,
   // Keep todayLog for streak logic
   const todayLog = useMemo(() => logs.find(l => l.logged_at === today), [logs, today]);
 
+  // Day count of program to dictate phase-based supplements
+  const programDay = useMemo(() => {
+    if (!programStartDate) return 1;
+    const start = new Date(programStartDate);
+    const target = new Date(selectedDate);
+    const diffTime = target.getTime() - start.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    return diffDays;
+  }, [programStartDate, selectedDate]);
+
+  // Coach supplements plan adapted for phases
+  const activeCoachSupplements = useMemo(() => {
+    const list = [...COACH_SUPPLEMENT_PLAN];
+    if (programDay >= 8) {
+      list.push(
+        {
+          name: "Apple Cider Vinegar",
+          dose: "1–2 tbsp in warm water",
+          timing: "Morning (Empty Stomach)",
+          note: "Helps with insulin sensitivity, digestion, and fat oxidation.",
+          why: "Helps with insulin sensitivity, digestion, and fat oxidation.",
+          bestTime: "Morning (Empty Stomach)",
+        },
+        {
+          name: "L-Carnitine",
+          dose: "1500mg – 2000mg",
+          timing: "30 mins before workout",
+          note: "Mobilizes fatty acids to be burned for energy, boosting fat loss and endurance.",
+          why: "Mobilizes fatty acids to be burned for energy, boosting fat loss and endurance.",
+          bestTime: "30 mins before workout",
+        }
+      );
+    }
+    return list;
+  }, [programDay]);
+
   const checklist: Supplement[] = useMemo(() => {
     if (selectedLog) {
       const items = [...(selectedLog.supplements || [])];
-      COACH_SUPPLEMENTS.forEach(coach => {
+      activeCoachSupplements.forEach(coach => {
         if (!items.some(i => i.name === coach.name)) {
           items.push({ name: coach.name, dose: coach.dose, timing: coach.timing, custom: false, taken: false });
         }
@@ -69,9 +105,9 @@ export function SupplementsClient({ userId, profileTag, today, programStartDate,
     const prevLog = logs.find(l => l.logged_at !== selectedDate);
     const prevCustoms = prevLog ? (prevLog.supplements || []).filter((i: any) => i.custom) : [];
     const initialCustoms = prevCustoms.map((i: any) => ({ name: i.name, dose: i.dose, timing: i.timing || "", custom: true, taken: false }));
-    const initialCoach = COACH_SUPPLEMENTS.map(c => ({ name: c.name, dose: c.dose, timing: c.timing, custom: false, taken: false }));
+    const initialCoach = activeCoachSupplements.map(c => ({ name: c.name, dose: c.dose, timing: c.timing, custom: false, taken: false }));
     return [...initialCoach, ...initialCustoms];
-  }, [selectedLog, logs, selectedDate]);
+  }, [selectedLog, logs, selectedDate, activeCoachSupplements]);
 
   // Form state for custom supplement
   const [customName, setCustomName] = useState("");
@@ -229,7 +265,36 @@ export function SupplementsClient({ userId, profileTag, today, programStartDate,
       const dateStr = currentDate.toISOString().split("T")[0];
       const log = logs.find(l => l.logged_at === dateStr);
 
-      const allCoachTaken = log && COACH_SUPPLEMENTS.every(coach =>
+      // Determine the coach supplements required for this historic date
+      let dayIndex = 1;
+      if (programStartDate) {
+        const start = new Date(programStartDate);
+        const diffTime = currentDate.getTime() - start.getTime();
+        dayIndex = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
+      }
+      const coachSuppsForDay = [...COACH_SUPPLEMENT_PLAN];
+      if (dayIndex >= 8) {
+        coachSuppsForDay.push(
+          {
+            name: "Apple Cider Vinegar",
+            dose: "1–2 tbsp in warm water",
+            timing: "Morning (Empty Stomach)",
+            note: "Helps with insulin sensitivity, digestion, and fat oxidation.",
+            why: "Helps with insulin sensitivity, digestion, and fat oxidation.",
+            bestTime: "Morning (Empty Stomach)",
+          },
+          {
+            name: "L-Carnitine",
+            dose: "1500mg – 2000mg",
+            timing: "30 mins before workout",
+            note: "Mobilizes fatty acids to be burned for energy, boosting fat loss and endurance.",
+            why: "Mobilizes fatty acids to be burned for energy, boosting fat loss and endurance.",
+            bestTime: "30 mins before workout",
+          }
+        );
+      }
+
+      const allCoachTaken = log && coachSuppsForDay.every(coach =>
         log.supplements?.some((s: any) => s.name === coach.name && (s.taken || s.taken_at))
       );
 
@@ -248,7 +313,7 @@ export function SupplementsClient({ userId, profileTag, today, programStartDate,
     }
 
     return currentStreak;
-  }, [logs, today]);
+  }, [logs, today, programStartDate]);
 
   // 6. 7-Day Compliance Grid (Monday-Sunday of current week)
   const weekDays = useMemo(() => {
@@ -265,7 +330,7 @@ export function SupplementsClient({ userId, profileTag, today, programStartDate,
   }, [today]);
 
   const gridSupplements = useMemo(() => {
-    const coachNames = COACH_SUPPLEMENTS.map(c => c.name);
+    const coachNames = activeCoachSupplements.map(c => c.name);
     const customNames = new Set<string>();
 
     checklist.forEach(item => {
@@ -283,10 +348,10 @@ export function SupplementsClient({ userId, profileTag, today, programStartDate,
     });
 
     return [
-      ...COACH_SUPPLEMENTS.map(c => ({ name: c.name, isCoach: true })),
+      ...activeCoachSupplements.map(c => ({ name: c.name, isCoach: true })),
       ...Array.from(customNames).map(name => ({ name, isCoach: false })),
     ];
-  }, [checklist, logs]);
+  }, [checklist, logs, activeCoachSupplements]);
 
   const formattedDate = (() => {
     const [y, m, d] = selectedDate.split("-").map(Number);
@@ -362,7 +427,7 @@ export function SupplementsClient({ userId, profileTag, today, programStartDate,
         <div className="space-y-2">
           {checklist.map((item, idx) => {
             const isCoach = !item.custom;
-            const coachInfo = COACH_SUPPLEMENTS.find(c => c.name === item.name);
+            const coachInfo = activeCoachSupplements.find(c => c.name === item.name);
             const isExpanded = expandedIndex === idx;
 
             return (
