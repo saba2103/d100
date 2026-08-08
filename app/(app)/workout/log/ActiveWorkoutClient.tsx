@@ -25,6 +25,8 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Misc";
+import { WORKOUT_VIDEO_MAPPING } from "@/lib/workoutVideos";
+import { VideoPlayerModal } from "@/components/features/VideoPlayerModal";
 
 interface ActiveWorkoutClientProps {
   profile: any;
@@ -80,6 +82,20 @@ export function ActiveWorkoutClient({
   const [isDiscardModalOpen, setIsDiscardModalOpen] = useState(false);
   const [isAddExerciseModalOpen, setIsAddExerciseModalOpen] = useState(false);
   const [newExerciseName, setNewExerciseName] = useState("");
+
+  // Video Demo Player Modal State
+  const [videoModalOpen, setVideoModalOpen] = useState(false);
+  const [selectedVideoUrl, setSelectedVideoUrl] = useState<string | null>(null);
+  const [selectedExerciseName, setSelectedExerciseName] = useState("");
+
+  const handlePlayDemo = (exerciseName: string) => {
+    const url = WORKOUT_VIDEO_MAPPING[exerciseName];
+    if (url) {
+      setSelectedVideoUrl(url);
+      setSelectedExerciseName(exerciseName);
+      setVideoModalOpen(true);
+    }
+  };
 
   const programDay = React.useMemo(() => {
     if (!profile?.program_start_date) return 1;
@@ -776,9 +792,19 @@ export function ActiveWorkoutClient({
             <Card key={exIdx} variant="surface" className="p-4 space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="font-display text-lg font-black text-[var(--text-primary)]">
-                    {ex.name}
-                  </h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-display text-lg font-black text-[var(--text-primary)]">
+                      {ex.name}
+                    </h3>
+                    {WORKOUT_VIDEO_MAPPING[ex.name] && (
+                      <button
+                        onClick={() => handlePlayDemo(ex.name)}
+                        className="px-2 py-0.5 rounded-lg bg-[rgba(249,115,22,0.1)] hover:bg-[rgba(249,115,22,0.2)] text-[var(--accent-text)] flex items-center gap-1 font-body text-[9px] uppercase font-bold tracking-wider transition-all duration-150"
+                      >
+                        <Play size={8} weight="fill" /> Demo
+                      </button>
+                    )}
+                  </div>
                   {(() => {
                     const planItem = coachPlan?.exercises.find((p) => p.name === ex.name);
                     if (planItem && showCoachPlan) {
@@ -1059,6 +1085,13 @@ export function ActiveWorkoutClient({
           </div>
         </div>
       </Modal>
+
+      <VideoPlayerModal
+        isOpen={videoModalOpen}
+        onClose={() => setVideoModalOpen(false)}
+        videoUrl={selectedVideoUrl}
+        exerciseName={selectedExerciseName}
+      />
     </div>
   );
 }

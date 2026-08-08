@@ -13,6 +13,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import type { Metadata } from "next";
 import { DeleteWorkoutButton } from "./DeleteWorkoutButton";
+import { PastWorkoutExercises } from "@/components/features/PastWorkoutExercises";
 
 export async function generateMetadata({
   params,
@@ -182,76 +183,7 @@ export default async function PastWorkoutPage({
       )}
 
       {/* Exercises Set Details */}
-      <div className="space-y-4">
-        <h2 className="font-display text-base tracking-wider text-[var(--text-muted)] uppercase">
-          Exercises & Sets
-        </h2>
-
-        {exercises.map((ex, exIdx) => (
-          <Card key={exIdx} variant="surface" className="p-4 space-y-3">
-            <div className="flex items-center justify-between pb-3">
-              <h3 className="font-display text-base font-black text-[var(--text-primary)]">
-                {ex.name}
-              </h3>
-              <span className="font-body text-xs text-[var(--text-muted)]">
-                {ex.sets?.length || 0} sets
-              </span>
-            </div>
-
-            <div className="space-y-2">
-              {(ex.sets || []).map((set: any, setIdx: number) => {
-                const isPlank = ex.name.toLowerCase().includes("plank");
-                const isCardio = ex.name.toLowerCase().includes("cardio");
-                const isDurationType = isPlank || isCardio;
-                return (
-                  <div
-                    key={setIdx}
-                    className="grid grid-cols-12 gap-3 items-center py-2.5 px-4 rounded-xl bg-[var(--bg-base)] text-xs font-body"
-                  >
-                    {/* Set Title */}
-                    <span className="col-span-3 text-[var(--text-secondary)] font-body-bold">
-                      Set {setIdx + 1}
-                    </span>
-
-                    {/* Metric 1: Reps / Secs / Mins */}
-                    <div className="col-span-3 text-center">
-                      <span className="font-display font-black text-sm text-[var(--text-primary)]">
-                        {set.reps || "0"}
-                      </span>
-                      <span className="text-[var(--text-muted)] text-[9px] uppercase font-bold tracking-wider ml-1">
-                        {isPlank ? "sec" : isCardio ? "min" : "rep"}
-                      </span>
-                    </div>
-
-                    {/* Metric 2: Weight / Secs / Mins */}
-                    <div className="col-span-3 text-center">
-                      <span className="font-display font-black text-sm text-[var(--text-primary)]">
-                        {set.weight_kg || "0"}
-                      </span>
-                      <span className="text-[var(--text-muted)] text-[9px] uppercase font-bold tracking-wider ml-1">
-                        {isPlank ? "sec" : isCardio ? "min" : "kg"}
-                      </span>
-                    </div>
-
-                    {/* Status Badge */}
-                    <div className="col-span-3 text-right">
-                      {set.completed ? (
-                        <span className="inline-block px-2.5 py-0.5 rounded-full bg-[var(--green-soft)] text-[var(--green)] font-body-bold text-[9px] uppercase tracking-wider">
-                          Done
-                        </span>
-                      ) : (
-                        <span className="inline-block px-2.5 py-0.5 rounded-full bg-[var(--red-soft)] text-[var(--red)] font-body-bold text-[9px] uppercase tracking-wider">
-                          Missed
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </Card>
-        ))}
-      </div>
+      <PastWorkoutExercises exercises={exercises} />
 
     </div>
   );

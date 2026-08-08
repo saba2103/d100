@@ -17,6 +17,7 @@ import {
   ChartLineUp,
   Compass,
   Calculator,
+  Video,
 } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -40,6 +41,7 @@ const TRACK_ITEMS = [
 
 const RESOURCE_ITEMS = [
   { href: "/course", label: "Course", icon: BookOpen },
+  { href: "/library", label: "Library", icon: Video },
   { href: "/collection", label: "Collection", icon: Images },
 ] as const;
 

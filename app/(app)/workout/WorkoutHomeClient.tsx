@@ -11,11 +11,14 @@ import {
   Clock,
   Circle,
   Sparkle,
+  Play,
 } from "@phosphor-icons/react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils/cn";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { WORKOUT_VIDEO_MAPPING } from "@/lib/workoutVideos";
+import { VideoPlayerModal } from "@/components/features/VideoPlayerModal";
 
 interface WorkoutHomeClientProps {
   profile: any;
@@ -34,6 +37,20 @@ export function WorkoutHomeClient({
 }: WorkoutHomeClientProps) {
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(today);
+
+  // Video Demo Player Modal State
+  const [videoModalOpen, setVideoModalOpen] = useState(false);
+  const [selectedVideoUrl, setSelectedVideoUrl] = useState<string | null>(null);
+  const [selectedExerciseName, setSelectedExerciseName] = useState("");
+
+  const handlePlayDemo = (exerciseName: string) => {
+    const url = WORKOUT_VIDEO_MAPPING[exerciseName];
+    if (url) {
+      setSelectedVideoUrl(url);
+      setSelectedExerciseName(exerciseName);
+      setVideoModalOpen(true);
+    }
+  };
 
   // Generate 15 weeks of the program starting from the program start date
   const programWeeks = useMemo(() => {
@@ -365,9 +382,19 @@ export function WorkoutHomeClient({
                             <h5 className="font-display text-sm font-black text-[var(--text-primary)] tracking-wide">
                               {ex.name}
                             </h5>
-                            <span className="inline-block mt-0.5 text-[10px] font-body text-[var(--text-muted)]">
-                              Target: <strong className="text-[var(--text-secondary)] font-medium">{ex.target}</strong>
-                            </span>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="inline-block text-[10px] font-body text-[var(--text-muted)]">
+                                Target: <strong className="text-[var(--text-secondary)] font-medium">{ex.target}</strong>
+                              </span>
+                              {WORKOUT_VIDEO_MAPPING[ex.name] && (
+                                <button
+                                  onClick={() => handlePlayDemo(ex.name)}
+                                  className="px-2 py-0.5 rounded-lg bg-[rgba(249,115,22,0.1)] hover:bg-[rgba(249,115,22,0.2)] text-[var(--accent-text)] flex items-center gap-1 font-body text-[9px] uppercase font-bold tracking-wider transition-all duration-150"
+                                >
+                                  <Play size={8} weight="fill" /> Demo
+                                </button>
+                              )}
+                            </div>
                           </div>
                         </div>
                         
@@ -530,6 +557,12 @@ export function WorkoutHomeClient({
         )}
       </div>
 
+      <VideoPlayerModal
+        isOpen={videoModalOpen}
+        onClose={() => setVideoModalOpen(false)}
+        videoUrl={selectedVideoUrl}
+        exerciseName={selectedExerciseName}
+      />
     </div>
   );
 }

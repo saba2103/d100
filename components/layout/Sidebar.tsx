@@ -21,6 +21,7 @@ import {
   Bell,
   MapTrifold,
   Calculator,
+  Video,
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils/cn";
 import { useAppUser } from "@/lib/contexts/AppContext";
@@ -72,6 +73,7 @@ const NAV_SECTIONS: NavSection[] = [
     title: "Resources",
     items: [
       { href: "/course", label: "Course", icon: BookOpen },
+      { href: "/library", label: "Library", icon: Video },
       { href: "/collection", label: "Collection", icon: Images },
     ],
   },
